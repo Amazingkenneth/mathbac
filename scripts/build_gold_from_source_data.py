@@ -70,6 +70,37 @@ def build_descriptors(src: Path, cache: Path) -> None:
     print(f"reference descriptors: {len(body)} residues of 1MA9 chain A")
 
 
+def build_capsule_reference(example: Path, cache: Path) -> None:
+    """Optional: the capsule's data/1ma9_example (the authors' own per-residue arrays for both 1MA9 chains).
+
+    Adds mfd (absent from Fig. 1) and chain B. Verified: for chain A these arrays equal the Fig. 1 values, and the
+    released code reproduces orc, frc, gnm, opd_7 and mfd exactly.
+    """
+    import numpy as np
+
+    arrays = {"c_charge": "c_charge_1ma9_{c}.npy", "hydrophobicity": "hp_1ma9_{c}.npy", "orc": "ollivier_1ma9_{c}.npy",
+              "frc": "forman_1ma9_{c}.npy", "gnm": "gnm_1ma9_{c}.npy", "opd_7": "opd_1ma9_{c}_7.npy", "mfd": "fd_1ma9_{c}.npy"}
+    out = GOLD / "reference_descriptors"
+    out.mkdir(parents=True, exist_ok=True)
+    for c in ("A", "B"):
+        chain = pdb.load_chain("1MA9", c, cache)
+        cols = {k: np.asarray(np.load(example / f.format(c=c), allow_pickle=True), float) for k, f in arrays.items()}
+        ge = {}
+        for line in open(example / f"ge_1ma9_{c}.txt"):
+            t = line.split()
+            if t and not line.startswith("#"):
+                ge.setdefault(t[0], (float(t[4]), float(t[3]), float(t[7])))
+        n = len(chain.resnums)
+        assert all(len(v) == n for v in cols.values()), {k: len(v) for k, v in cols.items()}
+        with (out / f"1ma9_{c}.csv").open("w", newline="") as f:
+            w = csv.writer(f)
+            w.writerow(["resnum", "resname", *cols, "rinacc", "shell", "pocketness"])
+            for i, rn in enumerate(chain.resnums):
+                g = ge.get(rn, ("", "", ""))
+                w.writerow([rn, chain.resnames[i], *[cols[k][i] for k in cols], *g])
+    print("reference descriptors: 1MA9 chains A and B from the capsule example (adds mfd and shell)")
+
+
 def build_fig2a(src: Path) -> None:
     rows = sheet_rows(src / "Fig2_Source_Data" / "Figure2_ab.xlsx")
     names = []
@@ -165,8 +196,11 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("source_data", type=Path)
     ap.add_argument("--pdb-cache", type=Path, default=ROOT / "cache" / "pdb")
+    ap.add_argument("--capsule-example", type=Path, help="capsule data/1ma9_example folder (optional, more complete reference)")
     a = ap.parse_args()
     build_descriptors(a.source_data, a.pdb_cache)
+    if a.capsule_example:
+        build_capsule_reference(a.capsule_example, a.pdb_cache)
     build_fig2a(a.source_data)
     build_folds(a.source_data)
     build_heldout(a.source_data)

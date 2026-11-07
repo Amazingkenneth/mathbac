@@ -81,16 +81,19 @@ def test_authors_pni_predictions_pass_c6(tmp_path):
 
 
 def test_authors_1ma9_descriptors_pass_c3_against_themselves(tmp_path):
-    c = ctx(tmp_path)
-    ref = GOLD / "reference_descriptors" / "1ma9_A.csv"
-    rows = list(csv.DictReader(ref.open()))
-    for fam, cols in {"CH": ["c_charge", "hydrophobicity", "mw"], "GE": ["rinacc", "pocketness", "opd_7"], "GT": ["orc", "frc", "gnm"]}.items():
-        out = c.workspace / "features" / fam / "1ma9_A.csv"
-        out.parent.mkdir(parents=True, exist_ok=True)
-        with out.open("w", newline="") as f:
-            w = csv.writer(f)
-            w.writerow(["resnum", "resname", *cols])
-            for r in rows:
-                w.writerow([r["resnum"], r["resname"], *[r[k] for k in cols]])
-    r = cp.c3_descriptors(c)
-    assert all(v is not None and v > 0.999 for v in r.data["columns"].values()), r.details
+    ctx_ = ctx(tmp_path)
+    families = {"CH": ["c_charge", "hydrophobicity", "mw"], "GE": ["rinacc", "shell", "pocketness", "opd_7"], "GT": ["orc", "frc", "gnm", "mfd"]}
+    for ref in sorted((GOLD / "reference_descriptors").glob("*.csv")):
+        rows = list(csv.DictReader(ref.open()))
+        have = set(rows[0])
+        for fam, wanted in families.items():
+            cols = [k for k in wanted if k in have]
+            out = ctx_.workspace / "features" / fam / ref.name
+            out.parent.mkdir(parents=True, exist_ok=True)
+            with out.open("w", newline="") as f:
+                w = csv.writer(f)
+                w.writerow(["resnum", "resname", *cols])
+                for r in rows:
+                    w.writerow([r["resnum"], r["resname"], *[r[k] for k in cols]])
+    r = cp.c3_descriptors(ctx_)
+    assert r.data["columns"] and all(v is not None and v > 0.999 for v in r.data["columns"].values()), r.details
