@@ -1,0 +1,39 @@
+# Source: PPI2PNI_Info.xlsx (Jessica Ma) and the released code.
+name: ghecom
+tier: 1
+title: GHECOM pocket and shell descriptors
+installed: true
+purpose: Per-residue minimum inaccessible radius (R_inacc), accessible shell volume and pocketness for one protein
+  chain.
+source: https://pdbj.org/ghecom
+invoke: /opt/mathbac/tools/ghecom.sh {pdb} {chain} {out}
+args:
+  pdb:
+    type: string
+    description: Workspace path to an atomistic PDB file
+    input: true
+  chain:
+    type: string
+    description: Chain identifier
+  out:
+    type: string
+    description: Output text file, e.g. features/ghecom/6wzo_A.txt
+inputs: Atomistic PDB (protein atoms only).
+outputs: GHECOM residue table; after 43 header rows, columns 3, 4, 7 are shell volume, R_inacc and pocketness.
+pni_translatability: Yes; needs atomistic NP coordinates.
+cost: Seconds per chain on one CPU.
+resources:
+  cpus: 1
+  mem_gb: 2
+  time_limit_min: 20
+preconditions:
+- The chain exists in the PDB file
+- Binary built in the image (smoke test passes)
+pitfalls:
+- The descriptor code takes the first len(CA) rows of the GHECOM table. If GHECOM emits a row for a residue without
+  a Cα (or skips one), every later row is shifted. Check the residue numbers line up with data/chains before using
+  the values.
+- 'Run on the protein chain alone: no HETATM records and only the first alternate location, matching the released
+  code''s preprocessing.'
+- The released code reads precomputed GHECOM files; nothing computes them for you in the PPI pipeline.
+smoke_test: /opt/mathbac/tools/smoke_test.sh ghecom

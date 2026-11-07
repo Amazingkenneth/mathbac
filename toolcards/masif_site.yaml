@@ -1,0 +1,16 @@
+# Source: PPI2PNI_Info.xlsx (Jessica Ma) and the released code.
+name: masif_site
+tier: 3
+title: MaSIF-site
+installed: false
+purpose: Surface-patch geometric deep learning for interaction sites (shape index, curvature, hydropathy, electrostatics,
+  H-bond potential).
+source: https://github.com/lpdi-epfl/masif
+doi: 10.1038/s41592-019-0666-6
+inputs: PDB
+outputs: .npy per-vertex prediction or .ply mesh
+pni_translatability: 'No'
+pitfalls:
+- Relies on overlapping patches/fingerprints of a protein surface; a PPI baseline only.
+preconditions:
+- Not installed in the cha2022 image; listed for later tasks (Kotov-lab data, baselines).

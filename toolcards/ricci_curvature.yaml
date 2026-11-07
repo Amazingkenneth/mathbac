@@ -1,0 +1,32 @@
+# Source: PPI2PNI_Info.xlsx (Jessica Ma) and the released code.
+name: ricci_curvature
+tier: 1
+title: Ollivier-Ricci and Forman-Ricci node curvature
+installed: true
+purpose: Node curvature (sum of incident edge curvatures) on the 7 Å Cα residue graph.
+source: GraphRicciCurvature 0.5.3; GT_curvature.py in the released code
+invoke: python /opt/mathbac/tools/descriptors.py curvature --ca {ca} --out {out} --cutoff {cutoff}
+args:
+  ca:
+    description: data/chains/<pdb>_<chain>.csv
+    input: true
+    type: string
+  out:
+    description: Output CSV path in the workspace
+    type: string
+  cutoff:
+    type: number
+    required: false
+    default: 7.0
+    description: 'Graph edge cutoff in Å (paper: 7)'
+inputs: Cα coordinate CSV.
+outputs: CSV resnum,resname,orc,frc.
+cost: 'Ollivier-Ricci is the slowest step: minutes for chains of ~1000 residues.'
+resources:
+  cpus: 4
+  mem_gb: 8
+  time_limit_min: 60
+pitfalls:
+- Edges connect residues with 0 < d <= cutoff (inclusive), as in make_graph().
+- Isolated residues get zero curvature.
+smoke_test: /opt/mathbac/tools/smoke_test.sh ricci_curvature

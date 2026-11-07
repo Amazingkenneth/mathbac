@@ -1,0 +1,13 @@
+# Source: PPI2PNI_Info.xlsx (Jessica Ma) and the released code.
+name: unified_surface
+tier: 2
+title: Unified Surface
+installed: false
+purpose: Surface descriptors (Gaussian, mean, k1, k2 curvature, shape index, point-scale features, electrostatic
+  charge, hydrophobicity, H-bond potential) scored for interaction.
+source: https://github.com/jessqma/unified_surface
+inputs: Descriptor matrix (CSV)
+outputs: TXT file with interaction score
+pni_translatability: 'Yes'
+preconditions:
+- Not installed in the cha2022 image; listed for later tasks (Kotov-lab data, baselines).

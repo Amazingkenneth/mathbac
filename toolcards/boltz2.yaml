@@ -1,0 +1,15 @@
+# Source: PPI2PNI_Info.xlsx (Jessica Ma) and the released code.
+name: boltz2
+tier: 3
+title: Boltz-2
+installed: false
+purpose: Structure and binding-affinity prediction.
+source: https://github.com/jwohlwend/boltz
+doi: 10.1101/2025.06.14.659707
+inputs: Sequence (YAML)
+outputs: mmCIF or PDB
+pni_translatability: 'No'
+pitfalls:
+- Can only calculate binding affinity for protein-ligand complexes.
+preconditions:
+- Not installed in the cha2022 image; listed for later tasks (Kotov-lab data, baselines).

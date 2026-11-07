@@ -1,0 +1,239 @@
+# Reference task graph for reproducing Cha et al. 2022.
+#
+# plan_mode: reference runs this graph as written. In plan_mode: llm the manager
+# never sees this file; we compare its plan against it afterwards.
+# `facts` are the method facts a correct manager would pass to each node. The
+# communication metrics measure how many of them survive each handoff.
+
+nodes:
+  - id: N1
+    role: spec_reader
+    goal: >-
+      Read the paper and its Supplementary Information (and the released code, if the
+      access level includes it) and write the method specification spec/spec.yaml with
+      every required key, each with value, source and status.
+    inputs: [/materials/paper, /materials/si, /materials/code]
+    outputs: [{path: spec/spec.yaml}]
+    acceptance: spec_contract
+    checkpoint: C1
+    budget: {max_turns: 60, max_tokens: 800000, wall_minutes: 60}
+
+  - id: N2
+    role: env_engineer
+    goal: >-
+      Verify the scientific tools needed for this task run in the sandbox. Run the smoke
+      test of every installed tier-1 tool card and write env/smoke_report.json.
+    outputs: [{path: env/smoke_report.json}]
+    acceptance: env_contract
+    tools: [ghecom, unified_ppi_descriptors, gnm_prody, ricci_curvature, multifractal_dimension, opd_chirality, dnn_train]
+    checkpoint: C0
+    budget: {max_turns: 40, max_tokens: 400000, wall_minutes: 60}
+
+  - id: N3
+    role: data_curator
+    depends_on: [N1, N2]
+    goal: >-
+      Build the protein-protein dataset: the training pairs and the held-out complexes
+      6WZO, 6NQN and 1C29 (chains A and B). Write data/pairs.csv, data/substitutions.csv,
+      Cα coordinate files per chain, inter-chain distance matrices and data/dataset_summary.json.
+    inputs: [spec/spec.yaml]
+    outputs:
+      - {path: data/pairs.csv, schema: "pdb_id,chain_a,chain_b,split"}
+      - {path: data/chains/*.csv, schema: "resnum,resname,x,y,z"}
+      - {path: data/distances/*.npz, schema: "D,res_a,res_b"}
+      - {path: data/dataset_summary.json}
+    acceptance: dataset_contract
+    facts:
+      residue_representation: CA
+      contact_cutoff_A: 7.0
+      training_set_n_pairs: 464
+      training_set_n_residue_pairs: 27859297
+      heldout_ppi: [6WZO, 6NQN, 1C29]
+    checkpoint: C2
+    budget: {max_turns: 80, max_tokens: 800000, wall_minutes: 180}
+
+  - id: N3c
+    role: data_curator
+    depends_on: [N1, N2]
+    goal: >-
+      Build coarse-grained models of the nanoparticles used in the paper (graphene quantum
+      dots, spherical carbon nanoparticle, single-walled carbon nanotubes, a 17 Å carbon
+      nanotube, the ZnO nanopyramid) and list every protein-nanoparticle case in data/np/cases.csv.
+    inputs: [spec/spec.yaml]
+    outputs:
+      - {path: data/np/*_cg.csv, schema: "node,x,y,z,n_atoms,element"}
+      - {path: data/np/cases.csv, schema: "case,np_name,pdb_id,chain,reference"}
+    acceptance: np_contract
+    facts:
+      carbon_atoms_per_node: 13
+      zno_atoms_per_node: 2
+      np_graph_edge_cutoff_A: 7.0
+      pni_cases: [GQD-5KHB, GQD-2L86, GQD-6ZRF, CNT-1CXP, ZnO-beta_galactosidase, SWNT-corona, spherical_C-corona]
+    budget: {max_turns: 60, max_tokens: 600000, wall_minutes: 120}
+
+  - id: N4a
+    role: descriptor_engineer
+    depends_on: [N3]
+    goal: Compute CH descriptors for every chain in data/pairs.csv and write features/CH/<pdb>_<chain>.csv.
+    inputs: [data/pairs.csv, data/chains/]
+    outputs: [{path: features/CH/*.csv, schema: "resnum,resname,c_charge,hydrophobicity,polarity,mw"}]
+    acceptance: features_contract
+    tools: [unified_ppi_descriptors]
+    facts: {descriptor_family: CH}
+    checkpoint: C3
+    budget: {max_turns: 60, max_tokens: 600000, wall_minutes: 240}
+
+  - id: N4b
+    role: descriptor_engineer
+    depends_on: [N3]
+    goal: >-
+      Compute GE descriptors (minimum inaccessible radius, accessible shell volume, pocketness
+      from GHECOM; OPD chirality index at four neighbourhood sizes) for every chain and write
+      features/GE/<pdb>_<chain>.csv.
+    inputs: [data/pairs.csv, data/chains/]
+    outputs: [{path: features/GE/*.csv, schema: "resnum,resname,rinacc,shell,pocketness,opd_5,opd_7,opd_10,opd_15"}]
+    acceptance: features_contract
+    tools: [ghecom, opd_chirality, unified_ppi_descriptors]
+    facts:
+      descriptor_family: GE
+      opd_neighbourhood_sizes: [5, 7, 10, 15]
+      opd_sizes_note: "the original capsule's training features use 5, 7, 10, 15; unified_fast computes only 5 and 7"
+    checkpoint: C3
+    budget: {max_turns: 80, max_tokens: 800000, wall_minutes: 360}
+
+  - id: N4c
+    role: descriptor_engineer
+    depends_on: [N3]
+    goal: >-
+      Compute GT descriptors (Ollivier-Ricci and Forman-Ricci node curvature, GNM square sum,
+      multifractal dimension features) on the 7 Å Cα graph of every chain and write
+      features/GT/<pdb>_<chain>.csv.
+    inputs: [data/pairs.csv, data/chains/]
+    outputs: [{path: features/GT/*.csv, schema: "resnum,resname,orc,frc,gnm,mfd,mfd_1,mfd_2,mfd_3,mfd_4"}]
+    acceptance: features_contract
+    tools: [gnm_prody, ricci_curvature, multifractal_dimension, unified_ppi_descriptors]
+    facts:
+      descriptor_family: GT
+      graph_edge_cutoff_A: 7.0
+      gnm_modes_fraction: 0.1
+      gnm_modes_conflict:
+        paper: "square sum of the first tenth of the modes (Methods)"
+        code: "first 10 modes: GNM.gnm_sum_mode(pdb, 10, chain) in PPI_descriptors_cal.py"
+        use: "code value for C3 (reference descriptors come from the released code); report both"
+      gnm_kirchhoff_cutoff_A: 7.0
+      node_curvature_aggregation: sum
+      mfd_box_radius: 5
+    checkpoint: C3
+    budget: {max_turns: 80, max_tokens: 800000, wall_minutes: 360}
+
+  - id: N4d
+    role: descriptor_engineer
+    depends_on: [N3c]
+    goal: Compute GE and GT descriptors for every coarse-grained nanoparticle and write features/np/<np_name>.csv.
+    inputs: [data/np/]
+    outputs: [{path: features/np/*.csv}]
+    acceptance: np_features_contract
+    tools: [ghecom, opd_chirality, gnm_prody, ricci_curvature, multifractal_dimension, unified_pni_descriptors]
+    facts: {np_descriptor_subset: GE_GT, np_graph_edge_cutoff_A: 7.0}
+    budget: {max_turns: 60, max_tokens: 600000, wall_minutes: 180}
+
+  - id: N5
+    role: ml_engineer
+    depends_on: [N4a, N4b, N4c]
+    goal: >-
+      Assemble residue-pair feature matrices for the seven descriptor subsets from the training
+      split, with the class balancing the spec describes, and write ml/datasets/.
+    inputs: [spec/spec.yaml, data/, features/]
+    outputs:
+      - {path: ml/datasets/manifest.json}
+      - {path: ml/datasets/*.npz, schema: "X,y,pair_index"}
+    acceptance: ml_dataset_contract
+    facts:
+      descriptor_subsets: [all, CH, GE, GT, GE_GT, CH_GE, CH_GT]
+      class_balancing: undersample non-contacts to a 1:1 ratio
+      contact_cutoff_A: 7.0
+    budget: {max_turns: 60, max_tokens: 600000, wall_minutes: 240}
+
+  - id: N6a
+    role: ml_engineer
+    depends_on: [N5]
+    goal: >-
+      Run tenfold cross-validation of logistic regression, Gaussian naive Bayes, SVM, random
+      forest and XGBoost on every descriptor subset. Save raw per-fold predictions and metrics.
+    inputs: [ml/datasets/]
+    outputs:
+      - {path: ml/cv/predictions/*.npz, schema: "fold,y_true,y_score"}
+      - {path: ml/cv/metrics.csv}
+    acceptance: cv_contract
+    facts: {models: [lr, gnb, svm, rf, xgb], cv_folds: 10, metrics: [accuracy, auc, f1]}
+    checkpoint: C4
+    budget: {max_turns: 60, max_tokens: 600000, wall_minutes: 480}
+
+  - id: N6b
+    role: ml_engineer
+    depends_on: [N5]
+    goal: >-
+      Run tenfold cross-validation of the DNN on every descriptor subset. Save raw per-fold
+      predictions, metrics, and the trained models for the GT, GE_GT and all subsets.
+    inputs: [ml/datasets/]
+    outputs:
+      - {path: ml/cv/predictions/dnn_*.npz, schema: "fold,y_true,y_score"}
+      - {path: ml/models/dnn_GE_GT/}
+    acceptance: cv_contract
+    tools: [dnn_train]
+    facts:
+      models: [dnn]
+      cv_folds: 10
+      dnn: {layers: 3, units: 512, activation: relu, dropout: 0.5, output: softmax, loss: categorical_crossentropy}
+      dnn_training_code: >-
+        Released DNN_train.py: MinMax scaling on all rows, KFold(shuffle, random_state=0), batch norm before
+        the dense layers, Adam, batch 128, up to 1000 epochs, best epoch chosen by accuracy on the test fold.
+        Reproduce that for Table 1 and also report --val-from-train results as the unbiased variant.
+    checkpoint: C4
+    budget: {max_turns: 60, max_tokens: 600000, wall_minutes: 600}
+
+  - id: N7
+    role: ml_engineer
+    depends_on: [N6a, N6b]
+    goal: >-
+      Predict residue-pair contact probabilities for the held-out complexes 6WZO, 6NQN and 1C29
+      with models trained on the full training split (DNN, RF and XGB; GE_GT, GT and all subsets),
+      and take the top 0.1% of pairs as the predicted interface.
+    inputs: [ml/models/, features/, data/]
+    outputs:
+      - {path: predictions/ppi/*.csv, schema: "res_a,res_b,prob"}
+      - {path: predictions/ppi/*_interface.json}
+    acceptance: ppi_pred_contract
+    facts: {interface_threshold_top_fraction: 0.001, heldout_ppi: [6WZO, 6NQN, 1C29]}
+    checkpoint: C5
+    budget: {max_turns: 60, max_tokens: 600000, wall_minutes: 240}
+
+  - id: N8
+    role: ml_engineer
+    depends_on: [N6b, N4d]
+    goal: >-
+      Apply the GE_GT models trained on protein-protein complexes to every protein-nanoparticle
+      case in data/np/cases.csv, write per-case predictions and interfaces, and rank protein-corona
+      propensities for the SWNT and spherical carbon nanoparticle cases.
+    inputs: [ml/models/, features/np/, data/np/cases.csv]
+    outputs:
+      - {path: predictions/pni/*_interface.json}
+      - {path: predictions/pni/corona_ranking.csv, schema: "np_name,protein,score"}
+    acceptance: pni_pred_contract
+    facts: {np_descriptor_subset: GE_GT, interface_threshold_top_fraction: 0.001}
+    checkpoint: C6
+    budget: {max_turns: 60, max_tokens: 600000, wall_minutes: 240}
+
+  - id: N9
+    role: reporter
+    depends_on: [N7, N8]
+    goal: >-
+      Write the reproduction report with a verdict and evidence for each claim in the task brief,
+      a list of every deviation from the published method, and tool-card drafts for the validated steps.
+    inputs: [spec/, data/, features/, ml/, predictions/]
+    outputs:
+      - {path: report/report.md}
+      - {path: report/claims.yaml}
+    acceptance: report_contract
+    checkpoint: C7
+    budget: {max_turns: 50, max_tokens: 600000, wall_minutes: 90}

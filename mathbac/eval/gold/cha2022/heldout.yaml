@@ -1,0 +1,25 @@
+# C5: held-out protein-protein complexes.
+#
+# Ground truth: residues whose Cα is within 7 Å of any Cα on the partner chain, computed by the
+# evaluator from RCSB coordinates. Verified identical to the authors' published ground truth
+# (Fig. 4 source data, heldout_authors.yaml) for all three complexes.
+#
+# Scoring: per-residue precision/recall/F1 of the predicted interface over both chains.
+# The SI Tables 4-6 numbers (e.g. 6WZO accuracy 0.721) use a definition we cannot reconstruct
+# from published data: scored per residue, the authors' own Fig. 4 predictions give F1 0.533
+# (6WZO), 0.400 (6NQN), 0.366 (1C29). So the target is the authors' result under one consistent
+# metric: an agent passes a complex when its F1 is at least the authors' F1 minus `f1_margin`.
+
+contact_cutoff_A: 7.0
+model: dnn
+subset: GE_GT
+top_fraction: 0.001
+f1_margin: 0.10
+complexes:
+  - {pdb: 6WZO, chain_a: A, chain_b: B, name: "SARS-CoV-2 nucleocapsid dimer", authors_f1: 0.533}
+  - {pdb: 6NQN, chain_a: A, chain_b: B, name: "Dronpa (β-barrel)", authors_f1: 0.400}
+  - {pdb: 1C29, chain_a: A, chain_b: B, name: "tryptophan synthase (TIM barrel)", authors_f1: 0.366}
+
+# C2: 1MA9 distance matrix check (Fig. 1b; the authors' matrix equals RCSB coordinates to 1e-14 Å)
+distance_check: {pdb: 1MA9, chain_a: A, chain_b: B, max_abs_diff_A: 0.01}
+dataset: {n_pairs: 464, n_residue_pairs: 27859297, residue_pairs_rel_tol: 0.01}

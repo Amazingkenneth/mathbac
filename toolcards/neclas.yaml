@@ -1,0 +1,17 @@
+# Source: PPI2PNI_Info.xlsx (Jessica Ma) and the released code.
+name: neclas
+tier: 2
+title: NeCLAS
+installed: false
+purpose: 80 local features (CPSA, CPSA H-bonding, WHIM, depth, protrusion, charge, mass, pocket propensity, relative
+  ASA) and 400 environmental features (atom-centred symmetry functions).
+source: https://codeocean.com/capsule/0116541/tree/v1
+doi: 10.1038/s43588-023-00438-x
+inputs: Descriptor matrix
+outputs: CSV of residues with interaction score
+pni_translatability: 'Yes'
+pitfalls:
+- Only works for nanocarbons.
+- Requires GHECOM for geometric descriptors.
+preconditions:
+- Not installed in the cha2022 image; listed for later tasks (Kotov-lab data, baselines).

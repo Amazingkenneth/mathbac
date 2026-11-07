@@ -1,0 +1,21 @@
+np_name,protein,score
+spherical_C_5nm,apolipoprotein,0.0097
+SWNT_62_50nm_5A,apolipoprotein,0.4902
+SWNT_66_50nm_8A,apolipoprotein,0.9603
+SWNT_78_50nm_1nm,apolipoprotein,0.9834
+SWNT_87_50nm_1nm,apolipoprotein,0.9837
+spherical_C_5nm,histidine-rich glycoprotein,0.0112
+SWNT_62_50nm_5A,histidine-rich glycoprotein,0.4154
+SWNT_66_50nm_8A,histidine-rich glycoprotein,0.5621
+SWNT_78_50nm_1nm,histidine-rich glycoprotein,0.6481
+SWNT_87_50nm_1nm,histidine-rich glycoprotein,0.6528
+spherical_C_5nm,galectin-3-binding protein,0.0092
+SWNT_62_50nm_5A,galectin-3-binding protein,0.4677
+SWNT_66_50nm_8A,galectin-3-binding protein,0.4876
+SWNT_78_50nm_1nm,galectin-3-binding protein,0.5908
+SWNT_87_50nm_1nm,galectin-3-binding protein,0.5974
+spherical_C_5nm,albumin,0.0061
+SWNT_62_50nm_5A,albumin,0.2597
+SWNT_66_50nm_8A,albumin,0.0158
+SWNT_78_50nm_1nm,albumin,0.011
+SWNT_87_50nm_1nm,albumin,0.0136

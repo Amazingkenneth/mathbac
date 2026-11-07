@@ -1,0 +1,61 @@
+# C1 gold checklist. Each item is checked against spec/spec.yaml.
+# match types:
+#   number:   |value - expected| <= tol
+#   text:     value (as text, lowercased) contains any of `any`
+#   all_of:   for each group in `groups`, the value (flattened to text) contains one of the group's synonyms
+#   set:      value (list) equals `expected` as a set (case-insensitive)
+# source: where the fact is stated. "code" items count only at access levels with code (L2, L3).
+
+pass_fraction: 0.85
+
+items:
+  - {id: residue_repr, key: residue_representation, match: text, any: ["ca", "alpha-carbon", "α-carbon", "c-alpha", "calpha"], source: paper}
+  - {id: contact_cutoff, key: contact_cutoff_A, match: number, expected: 7.0, tol: 0.01, source: paper}
+  - {id: edge_cutoff, key: graph_edge_cutoff_A, match: number, expected: 7.0, tol: 0.01, source: paper}
+  - id: ch_set
+    key: descriptors.CH
+    match: all_of
+    groups: [["charge"], ["hydrophob"], ["weight", "mw"], ["polar"], ["count", "composition"]]
+    source: paper
+  - id: ge_set
+    key: descriptors.GE
+    match: all_of
+    groups: [["inaccessible", "rinacc"], ["shell"], ["pocket"], ["opd", "osipov", "chiral"]]
+    source: paper
+  - id: gt_set
+    key: descriptors.GT
+    match: all_of
+    groups: [["gnm", "gaussian network"], ["ollivier", "orc"], ["forman", "frc"], ["multifractal", "mfd"]]
+    source: paper
+  - {id: opd_sizes, key: opd_neighbourhood_sizes, match: set, expected: [5, 7, 10, 15], source: code}
+  - {id: gnm_fraction, key: gnm_modes_fraction, match: number, expected: 0.1, tol: 0.001, source: paper}
+  - {id: curvature_sum, key: node_curvature_aggregation, match: text, any: ["sum"], source: paper}
+  - {id: n_pairs, key: training_set.n_pairs, match: number, expected: 464, tol: 0, source: paper}
+  - {id: n_residue_pairs, key: training_set.n_residue_pairs, match: number, expected: 27859297, tol: 0, source: paper}
+  - {id: balancing, key: class_balancing, match: text, any: ["undersampl", "under-sampl", "balanc"], source: code}
+  - id: subsets
+    key: descriptor_subsets
+    match: all_of
+    groups: [["all"], ["ch_ge", "ch+ge"], ["ch_gt", "ch+gt"], ["ge_gt", "ge+gt"]]
+    source: paper
+  - id: models
+    key: models
+    match: all_of
+    groups: [["logistic"], ["bayes", "gnb"], ["svm", "support vector"], ["random forest", "rf"], ["xgb"], ["dnn", "neural"]]
+    source: paper
+  - id: dnn_arch
+    key: dnn
+    match: all_of
+    groups: [["512"], ["relu"], ["0.5"], ["softmax"], ["cross"]]
+    source: paper
+  - {id: cv_folds, key: cv_folds, match: number, expected: 10, tol: 0, source: paper}
+  - id: metrics
+    key: metrics
+    match: all_of
+    groups: [["accuracy"], ["auc", "roc"], ["f1"]]
+    source: paper
+  - {id: top_fraction, key: interface_threshold_top_fraction, match: number, expected: 0.001, tol: 1.0e-6, source: paper}
+  - {id: heldout, key: heldout_ppi, match: set, expected: [6WZO, 6NQN, 1C29], source: paper}
+  - {id: carbon_cg, key: np_coarse_graining.carbon_atoms_per_node, match: number, expected: 13, tol: 0, source: paper}
+  - {id: zno_cg, key: np_coarse_graining.zno_atoms_per_node, match: number, expected: 2, tol: 0, source: paper}
+  - {id: np_subset, key: np_descriptor_subset, match: all_of, groups: [["ge"], ["gt"]], source: paper}
