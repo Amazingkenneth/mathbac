@@ -211,6 +211,17 @@ class UserSandbox(Sandbox):
         self.inner_materials = str(link_dir)
         subprocess.run(["chown", "-R", f"{self.uid}:{self.gid}", str(self.workspace)], check=True)
 
+        # TLS through an intercepting proxy needs its CA bundle; it often lives somewhere only root can read.
+        # The bundle is public certificates, so a world-readable copy is safe.
+        self.ca_bundle = ""
+        src = next((os.environ[k] for k in ("SSL_CERT_FILE", "REQUESTS_CA_BUNDLE", "CURL_CA_BUNDLE") if os.environ.get(k)), "")
+        if src and Path(src).is_file():
+            dest = Path("/etc/ssl/certs/mathbac-agent-ca-bundle.crt")
+            if not dest.exists() or dest.read_bytes() != Path(src).read_bytes():
+                shutil.copyfile(src, dest)
+            os.chmod(dest, 0o644)
+            self.ca_bundle = str(dest)
+
         # Self-checks: the agent can work in the workspace and cannot read what is protected.
         probe = self._run(f"test -w {shlex.quote(str(self.workspace))} && echo ok", 30)
         if probe.output.strip() != "ok":
@@ -224,8 +235,9 @@ class UserSandbox(Sandbox):
         env = ["env", "-i", f"HOME={self.home}", f"PATH={self.path}", "LANG=C.UTF-8", f"USER={self.user}",
                f"WORK={self.workspace}", f"MATERIALS={self.inner_materials}",
                f"HTTPS_PROXY={os.environ.get('HTTPS_PROXY', '')}", f"HTTP_PROXY={os.environ.get('HTTP_PROXY', '')}",
-               f"NO_PROXY={os.environ.get('NO_PROXY', '')}", f"SSL_CERT_FILE={os.environ.get('SSL_CERT_FILE', '')}",
-               f"REQUESTS_CA_BUNDLE={os.environ.get('REQUESTS_CA_BUNDLE', '')}"]
+               f"NO_PROXY={os.environ.get('NO_PROXY', '')}"]
+        if self.ca_bundle:
+            env += [f"SSL_CERT_FILE={self.ca_bundle}", f"REQUESTS_CA_BUNDLE={self.ca_bundle}", f"CURL_CA_BUNDLE={self.ca_bundle}"]
         argv = ["runuser", "-u", self.user, "--", *env, "timeout", "--kill-after=10", str(int(timeout_s)), "bash", "-c", command]
         t0 = time.time()
         try:

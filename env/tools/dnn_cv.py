@@ -46,9 +46,13 @@ def main():
     tf.random.set_seed(a.seed)
     z = np.load(a.dataset)
     X_raw, y = z["X"].astype("float32"), z["y"].astype(int)
-    X_all = X_raw if a.scale_per_fold else MinMaxScaler().fit_transform(X_raw)
     model_dir = os.path.join(a.out_dir, "models", f"dnn_{a.subset}")
     os.makedirs(model_dir, exist_ok=True)
+    scaler = MinMaxScaler().fit(X_raw)
+    X_all = X_raw if a.scale_per_fold else scaler.transform(X_raw)
+    # Save the scaler so predictions on new structures use the training scaling. (The released
+    # PPI_ML_prediction.py applies the fold models to unscaled features; the scaler is not saved there.)
+    np.savez(os.path.join(model_dir, "scaler.npz"), data_min=scaler.data_min_, data_max=scaler.data_max_)
     folds, ys, scores = [], [], []
 
     cv = KFold(n_splits=a.folds, shuffle=True, random_state=0)
