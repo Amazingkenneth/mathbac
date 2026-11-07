@@ -57,10 +57,10 @@ The **in-loop check** only tests the contract: files exist, columns are present,
 | C0 | `env/smoke_report.json` | every tier-1 tool's smoke test passes | all ok (self-reported; rerun in the image to confirm) |
 | C1 | `spec/spec.yaml` vs 22-item gold checklist | paper values (7 Å, 464 pairs, 27,859,297 residue pairs, 3×512 DNN, 10 folds, top 0.1%, 13 C atoms/node, ...) | ≥ 85% of items; code-only items skipped at L1 |
 | C2 | pair list and distance matrices, recomputed | 464 training pairs; residue pairs within 1% of 27,859,297; 1MA9 matrix within 0.01 Å of RCSB coordinates | all three |
-| C3 | feature CSVs vs reference descriptors from the released code | Pearson r ≥ 0.99 per descriptor on reference chains (6WZO A/B, 1MA9 A/B); Fig. 2a correlations (ORC~FRC, Shell~R<sub>inacc</sub>) | every descriptor matches |
-| C4 | raw fold predictions, metrics recomputed by the evaluator | Table 1, e.g. DNN GT 0.808 / 0.877 / 0.800 (acc / AUC / F1) | headline cells within ±0.03 and all orderings hold: GT > GE > CH, adding CH moves AUC ≤ 0.03, RF/XGB/DNN > LR/GNB/SVM |
-| C5 | pair probabilities, interface recomputed at top 0.1%; ground truth from RCSB | ~80% residue accuracy on 6WZO, 6NQN, 1C29 | ≥ 0.75 on all three |
-| C6 | NP interface files and corona ranking | CNT–hMPO hits Tyr293/Tyr313/Arg294/Arg307; GQD–PSM-α near the N-terminus; albumin ranks lowest on SWNT; spherical C below SWNT; GQD–hIAPP and ZnO–β-gal by review | ≥ 5 of 6 |
+| C3 | feature CSVs vs the authors' per-residue values for 1MA9 chain A (Fig. 1 source data), plus Fig. 2a correlations | Pearson r ≥ 0.99 per descriptor (c_charge, hydrophobicity, mw, rinacc, pocketness, opd_7, orc, gnm, frc); Fig. 2a pairs with \|r\| ≥ 0.3 within ±0.25 | every reference descriptor matches and ≥ 80% of correlations |
+| C4 | raw fold predictions, metrics recomputed by the evaluator | Table 1 (verified against the per-fold source data), e.g. DNN GT 0.808 / 0.877 / 0.800 (acc / AUC / F1) | headline cells within ±0.03 and all orderings hold: GT > GE > CH, adding CH moves AUC ≤ 0.03, RF/XGB/DNN > LR/GNB/SVM |
+| C5 | pair probabilities, interface recomputed at top 0.1%; ground truth from RCSB (identical to the authors' Fig. 4 ground truth) | per-residue F1 of the authors' own predictions: 0.533 / 0.400 / 0.366 | F1 ≥ authors' F1 − 0.10 on all three |
+| C6 | NP interface files and corona ranking | hMPO: Arg294 and Tyr313 (in the authors' prediction); PSM-α: residues 11–22 (the authors' predicted region); albumin lowest on SWNT; spherical C below SWNT; GQD–hIAPP and ZnO–β-gal by review | ≥ 5 of 6 |
 | C7 | report + claim verdicts | AutoMat-style rubric: fidelity, execution, accuracy, completeness, rigor (1–5) | scored by a reviewer or `mathbac judge` |
 
 Reproduction score = Σ weight × checkpoint score over C0–C6, out of 100. C7 is reported next to it.
@@ -75,16 +75,21 @@ Reproduction score = Σ weight × checkpoint score over C0–C6, out of 100. C7 
 
 Put the materials under `materials/cha2022/<folder>/` (not committed). The paper PDF Qiaoan shared goes in `paper/`; the SI in `si/`.
 
-## Known discrepancies the agents should find
+## Known discrepancies (verified against the released code and the source data)
 
-These are written into the stage facts and tool cards, and a good spec (N1) should flag them as `conflict` or `code_only`:
+A good spec (N1) should flag these as `conflict` or `code_only`. Each was checked, not inferred:
 
-- **GNM modes.** The Methods say "the square sum of the first tenth of the modes". The released code calls `GNM.gnm_sum_mode(pdb, 10, chain)`: the first 10 modes.
-- **OPD sizes.** Training features in the original capsule use neighbourhood sizes 5, 7, 10 and 15 (64 features for "all"). The vectorized `unified_fast` pipeline computes only 5 and 7.
-- **DNN model selection.** `DNN_train.py` keeps each fold's best epoch by accuracy on that fold's test split, uses `from_logits=True` on a softmax output, fits MinMax scaling on all rows before splitting, and reloads a fixed `best_model` path rather than the fold checkpoint. The `dnn_train` tool reproduces the first three by default and offers switches for the unbiased variant.
-- **Labels.** In the released arrays class 0 is the contact class (`pos_label=0`); our contracts use 1 = contact.
-- **Missing module.** `PPI_descriptors_cal.py` imports `descriptor_calc`, which is not in the repository; the tool wrapper maps it to `unified_descriptors/`.
-- **Class balance.** The training arrays are named `binary_under_*`: non-contacts were undersampled. The paper text does not say this.
+- **GNM modes.** The Methods say "the first tenth of the modes"; the code uses the first 10 modes. The code is what produced the paper: the released GNM function reproduces Fig. 1's GNM values for 1MA9 chain A exactly.
+- **Fig. 1 labels.** Fig. 1's "OPD" column is the N = 7 index (exact match), and its "MFD" column (panel 1n, "multifractal dimension") is Forman–Ricci curvature (exact match on all 442 residues).
+- **Fig. 3c source data.** The DNN "GT" and "GE+CH" rows are swapped relative to Table 1 and the text; Table 1 matches the text and is used as gold. All other 120 Table 1 cells match the per-fold source data in mean and s.d.
+- **Held-out scoring (SI Tables 4–6).** The evaluator's 7 Å ground truth is identical to the authors' published ground truth for 6WZO, 6NQN and 1C29, but the SI's accuracy/precision/recall cannot be the per-residue scores of the authors' published predictions (those give F1 0.53 / 0.40 / 0.37). The SI metric is likely pair-level on a resampled test set that is not published.
+- **hMPO residues.** The text names Tyr293, Tyr313, Arg294 and Arg307; the authors' Fig. 5d/e prediction (MPO numbering over 1CXP chains A and C) contains Arg294 and Tyr313 but not Tyr293 or Arg307.
+- **PSM-α.** The text cites PDB 5KHB and says the GQD docks "near the N-terminus"; the source data use 5I55, and the published prediction covers residues 11–21 of 2–22 (the C-terminal half).
+- **NP representation.** The text describes 13-atom coarse-grained NP nodes with 7 Å edges; the released PNI code and the published NP files use one node per atom with 4 Å edges (NP indices in Fig. 5 are atom indices).
+- **OPD sizes.** Training features use N = 5, 7, 10, 15 (64 features for "all"); the vectorized `unified_fast` pipeline computes only 5 and 7, and the NP code only 5 and 7.
+- **DNN training.** `DNN_train.py` keeps each fold's best epoch by accuracy on that fold's test split, uses `from_logits=True` on a softmax output, fits MinMax scaling on all rows before splitting, and reloads a fixed `best_model` path. `PPI_ML_prediction.py` then applies the fold models to unscaled features.
+- **Labels and balance.** Class 0 is the contact class in the released arrays; the training arrays are undersampled (`binary_under_*`), which the paper does not say.
+- **Missing pieces.** `PPI_descriptors_cal.py` imports a `descriptor_calc` package that is not in the repository and needs PyMOL; the CH tables (`amino_acid_charge.csv`, `amino_acid_atom_count.csv`) and the 464-pair list are only in the Code Ocean capsule.
 
 ## Running stages
 
@@ -99,7 +104,6 @@ To test a later stage on its own, copy reference artifacts for its inputs into a
 
 ## Still open
 
-- `scripts/make_reference_descriptors.py` covers the curvature, MFD and OPD columns. GNM, GHECOM and CH columns still need mapping from the released pipeline's matrix before C3 can be scored on every descriptor.
-- The C5 scoring rule (per-residue accuracy over each chain) follows the released code's output; confirm it against SI Tables 4–6.
-- The GQD–PSM-α rule in C6 ("most predicted residues in the N-terminal third") is provisional; check it against Fig. 5a.
-- The GHECOM wrapper's flags follow its residue-output mode and are checked by the smoke test; confirm on the first image build.
+- The exact 464-pair training list is only in the Code Ocean capsule, which blocks this container's network.
+- GHECOM's source download needs a registration form (name, email, affiliation) at pdbj.org/ghecom.
+- The GQD–hIAPP and ZnO–β-galactosidase findings need a reviewer; the corona ranking needs NP models the paper does not publish.
