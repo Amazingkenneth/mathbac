@@ -1,18 +1,25 @@
 # C5: held-out protein-protein complexes.
-# Ground truth is computed by the evaluator from the RCSB coordinates, not taken from the workspace:
-# a residue is in the true interface if its Cα is within `contact_cutoff_A` of any Cα on the other chain.
-# Scoring is per residue on each chain (interface vs not), matching how the released code
-# reports predicted residue sets (PPI_ML_prediction.py, TrueAB). Confirm against SI Tables 4-6.
+#
+# Ground truth: residues whose Cα is within 7 Å of any Cα on the partner chain, computed by the
+# evaluator from RCSB coordinates. Verified identical to the authors' published ground truth
+# (Fig. 4 source data, heldout_authors.yaml) for all three complexes.
+#
+# Scoring: per-residue precision/recall/F1 of the predicted interface over both chains.
+# The SI Tables 4-6 numbers (e.g. 6WZO accuracy 0.721) use a definition we cannot reconstruct
+# from published data: scored per residue, the authors' own Fig. 4 predictions give F1 0.533
+# (6WZO), 0.400 (6NQN), 0.366 (1C29). So the target is the authors' result under one consistent
+# metric: an agent passes a complex when its F1 is at least the authors' F1 minus `f1_margin`.
 
 contact_cutoff_A: 7.0
 model: dnn
 subset: GE_GT
-pass_accuracy: 0.75     # paper: "~80% accuracy"
+top_fraction: 0.001
+f1_margin: 0.10
 complexes:
-  - {pdb: 6WZO, chain_a: A, chain_b: B, name: "SARS-CoV-2 nucleocapsid dimer"}
-  - {pdb: 6NQN, chain_a: A, chain_b: B, name: "Dronpa (β-barrel)"}
-  - {pdb: 1C29, chain_a: A, chain_b: B, name: "tryptophan synthase (TIM barrel)"}
+  - {pdb: 6WZO, chain_a: A, chain_b: B, name: "SARS-CoV-2 nucleocapsid dimer", authors_f1: 0.533}
+  - {pdb: 6NQN, chain_a: A, chain_b: B, name: "Dronpa (β-barrel)", authors_f1: 0.400}
+  - {pdb: 1C29, chain_a: A, chain_b: B, name: "tryptophan synthase (TIM barrel)", authors_f1: 0.366}
 
-# C2: 1MA9 distance matrix check (Fig. 1b)
+# C2: 1MA9 distance matrix check (Fig. 1b; the authors' matrix equals RCSB coordinates to 1e-14 Å)
 distance_check: {pdb: 1MA9, chain_a: A, chain_b: B, max_abs_diff_A: 0.01}
 dataset: {n_pairs: 464, n_residue_pairs: 27859297, residue_pairs_rel_tol: 0.01}

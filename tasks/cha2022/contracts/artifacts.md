@@ -62,7 +62,7 @@ Protein feature files start with `resnum,resname` and have the same rows, in the
 
 | Family | Required columns (extra columns are allowed) |
 |---|---|
-| CH | `charge`, `hydrophobicity`, `polarity`, `mw` |
+| CH | `c_charge` (summed partial charge of the residue's carbon atoms, CHARMM), `hydrophobicity`, `polarity`, `mw` |
 | GE | `rinacc`, `shell`, `pocketness`, `opd_5`, `opd_7`, `opd_10`, `opd_15` |
 | GT | `orc`, `frc`, `gnm`, `mfd`, `mfd_1`, `mfd_2`, `mfd_3`, `mfd_4` |
 

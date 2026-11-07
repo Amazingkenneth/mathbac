@@ -81,9 +81,9 @@ def test_c5_scores_from_pair_probabilities(tmp_path, monkeypatch):
         rows = ["res_a,res_b,prob"] + [f"{i},{j},{0.9 if i == j else 0.01}" for i in range(1, 11) for j in range(1, 11)]
         (d / f"{pid}_dnn_GE_GT.csv").write_text("\n".join(rows))
     r = cp.c5_heldout(c)
-    # top 0.1% of 100 pairs = 1 pair -> 1 of 10 true interface residues per chain
+    # top 0.1% of 100 pairs = 1 pair -> 1 of 10 true interface residues per chain: precision 1, recall 0.1
     assert r.status == "fail"
-    assert all(abs(a - 0.1) < 1e-9 for a in r.data["accuracy"])
+    assert all(abs(f - 2 * 0.1 / 1.1) < 1e-9 for f in r.data["f1"])
 
 
 def test_c6_residue_and_ranking_findings(tmp_path, monkeypatch):

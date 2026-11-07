@@ -6,7 +6,7 @@ from pathlib import Path
 from mathbac.contracts import chain_files, limit, read_csv, require_columns
 
 REQUIRED = {
-    "CH": ["charge", "hydrophobicity", "polarity", "mw"],
+    "CH": ["c_charge", "hydrophobicity", "polarity", "mw"],
     "GE": ["rinacc", "shell", "pocketness", "opd_5", "opd_7", "opd_10", "opd_15"],
     "GT": ["orc", "frc", "gnm", "mfd", "mfd_1", "mfd_2", "mfd_3", "mfd_4"],
 }

@@ -76,7 +76,7 @@ nodes:
     depends_on: [N3]
     goal: Compute CH descriptors for every chain in data/pairs.csv and write features/CH/<pdb>_<chain>.csv.
     inputs: [data/pairs.csv, data/chains/]
-    outputs: [{path: features/CH/*.csv, schema: "resnum,resname,charge,hydrophobicity,polarity,mw"}]
+    outputs: [{path: features/CH/*.csv, schema: "resnum,resname,c_charge,hydrophobicity,polarity,mw"}]
     acceptance: features_contract
     tools: [unified_ppi_descriptors]
     facts: {descriptor_family: CH}

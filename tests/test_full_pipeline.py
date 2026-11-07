@@ -56,9 +56,9 @@ def test_whole_reference_graph(tmp_path, monkeypatch):
     assert by_id["C1"]["status"] == "pass"
     assert by_id["C2"]["data"]["checks"]["distance_1ma9"] is True
     assert by_id["C2"]["status"] == "fail"  # 2 synthetic pairs, not 464
-    assert by_id["C3"]["status"] == "not_scored"  # no reference descriptors committed yet
+    assert by_id["C3"]["status"] == "fail"  # synthetic values do not match the authors' 1MA9 descriptors
     assert by_id["C4"]["status"] == "fail" and by_id["C4"]["score"] > 0
-    assert len([a for a in by_id["C5"]["data"]["accuracy"] if a is not None]) == 3
+    assert len([a for a in by_id["C5"]["data"]["f1"] if a is not None]) == 3
     assert by_id["C6"]["data"]["findings"]["corona"] is True
     assert by_id["C7"]["status"] == "needs_review"
     assert 0 < out["reproduction_score"] < 100

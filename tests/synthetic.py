@@ -92,7 +92,7 @@ def write(node: str, ws: Path) -> None:
                  [[i, i * 3.0, 0, 0, 13, "C"] for i in range(6)])
     elif node in ("N4a", "N4b", "N4c"):
         fam = {"N4a": "CH", "N4b": "GE", "N4c": "GT"}[node]
-        cols = {"CH": ["charge", "hydrophobicity", "polarity", "mw"],
+        cols = {"CH": ["c_charge", "hydrophobicity", "polarity", "mw"],
                 "GE": ["rinacc", "shell", "pocketness", "opd_5", "opd_7", "opd_10", "opd_15"],
                 "GT": ["orc", "frc", "gnm", "mfd", "mfd_1", "mfd_2", "mfd_3", "mfd_4"]}[fam]
         for pdb, a, b, _ in PAIRS:

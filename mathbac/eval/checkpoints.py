@@ -188,10 +188,13 @@ def c2_data(ctx: EvalContext) -> CheckResult:
 
 # ---------------------------------------------------------------------------
 FAMILIES = {
-    "CH": ["charge", "hydrophobicity", "polarity", "mw"],
+    "CH": ["c_charge", "hydrophobicity", "polarity", "mw"],
     "GE": ["rinacc", "shell", "pocketness", "opd_5", "opd_7", "opd_10", "opd_15"],
     "GT": ["orc", "frc", "gnm", "mfd", "mfd_1", "mfd_2", "mfd_3", "mfd_4"],
 }
+# Fig. 2a names -> contract column names (OPD is skipped: the figure does not say which neighbourhood size)
+FIG2_COLUMNS = {"MW": "mw", "Hp": "hydrophobicity", "C_charge": "c_charge", "C_count": "c_count", "Shell": "shell",
+                "Rinacc": "rinacc", "Pocket": "pocketness", "ORC": "orc", "FRC": "frc", "GNM": "gnm", "MFD": "mfd"}
 
 
 def _pearson(x: list[float], y: list[float]) -> float:
@@ -201,57 +204,79 @@ def _pearson(x: list[float], y: list[float]) -> float:
     return float(np.corrcoef(a, b)[0, 1])
 
 
+def _chain_features(ws: Path, stem: str) -> dict[str, dict[str, float]]:
+    """resnum -> {column: value} merged over the CH, GE and GT files of one chain."""
+    rows: dict[str, dict[str, float]] = {}
+    for fam in FAMILIES:
+        f = ws / "features" / fam / f"{stem}.csv"
+        if not f.exists():
+            continue
+        for r in read_csv(f)[1]:
+            d = rows.setdefault(str(r["resnum"]), {})
+            for k, v in r.items():
+                if k not in ("resnum", "resname") and (x := _f(v)) is not None:
+                    d[k] = x
+    return rows
+
+
 def c3_descriptors(ctx: EvalContext) -> CheckResult:
     ref_dir = ctx.gold_dir / "reference_descriptors"
-    details = []
-    # Expected correlations from Fig. 2a, pooled over every chain the agents computed.
-    pooled: dict[str, list[float]] = {c: [] for fam in FAMILIES.values() for c in fam}
-    for fam, cols in FAMILIES.items():
-        for f in sorted((ctx.workspace / "features" / fam).glob("*.csv")):
-            for r in read_csv(f)[1]:
-                vals = [_f(r.get(c)) for c in cols]
-                if None not in vals:
-                    for c, v in zip(cols, vals):
-                        pooled[c].append(v)  # type: ignore[arg-type]
-    corr = {}
-    for a, b in (("orc", "frc"), ("shell", "rinacc")):
-        if len(pooled[a]) == len(pooled[b]):
-            corr[f"{a}~{b}"] = _pearson(pooled[a], pooled[b])
-    corr_ok = [abs(v) >= 0.5 for v in corr.values() if not math.isnan(v)]
-    details.append("Fig. 2a expected correlations: " + ", ".join(f"{k} r={v:.2f}" for k, v in corr.items()) if corr
-                   else "Fig. 2a correlations: not enough feature data")
+    cfg_p = ctx.gold_dir / "descriptor_check.yaml"
+    cfg = yaml.safe_load(cfg_p.read_text()) if cfg_p.exists() else {}
+    min_r = float(cfg.get("min_r", 0.99))
+    overrides = cfg.get("min_r_overrides", {})
+    details: list[str] = []
 
-    if not ref_dir.exists():
-        details.append("Reference descriptors not generated yet. Run scripts/make_reference_descriptors.py "
-                       "with the capsule code to create mathbac/eval/gold/cha2022/reference_descriptors/.")
-        return CheckResult("C3", "Descriptors correct", "not_scored", 0.0, details, {"correlations": corr})
-
-    per_col: dict[str, list[float]] = {}
-    for ref in sorted(ref_dir.glob("*.csv")):
-        _, ref_rows = read_csv(ref)
-        for fam, cols in FAMILIES.items():
-            f = ctx.workspace / "features" / fam / ref.name
-            if not f.exists():
-                for c in cols:
-                    per_col.setdefault(c, []).append(float("nan"))
+    # 1. Fig. 2a cross-correlations, pooled over every chain the agents computed.
+    stems = sorted({f.stem for fam in FAMILIES for f in (ctx.workspace / "features" / fam).glob("*.csv")})
+    pooled = [row for s in stems for row in _chain_features(ctx.workspace, s).values()]
+    fig2 = ctx.gold("fig2a_correlations.yaml")["matrix"] if (ctx.gold_dir / "fig2a_correlations.yaml").exists() else {}
+    corr_rows = []
+    names = [n for n in fig2 if n in FIG2_COLUMNS]
+    for i, a in enumerate(names):
+        for b in names[i + 1:]:
+            target = fig2[a].get(b)
+            ca, cb = FIG2_COLUMNS[a], FIG2_COLUMNS[b]
+            if target is None or abs(target) < 0.3:
                 continue
-            rows = {r["resnum"]: r for r in read_csv(f)[1]}
-            for c in cols:
-                if c not in ref_rows[0]:
-                    continue
-                pairs = [(_f(rr[c]), _f(rows.get(rr["resnum"], {}).get(c))) for rr in ref_rows]
-                pairs = [(x, y) for x, y in pairs if x is not None and y is not None]
-                per_col.setdefault(c, []).append(_pearson([p[0] for p in pairs], [p[1] for p in pairs]) if len(pairs) >= 3 else float("nan"))
-    col_ok = {c: bool(v) and all(not math.isnan(x) and x >= 0.99 for x in v) for c, v in per_col.items()}
-    frac = sum(col_ok.values()) / len(col_ok) if col_ok else 0.0
-    corr_frac = sum(corr_ok) / len(corr_ok) if corr_ok else 0.0
+            xy = [(r[ca], r[cb]) for r in pooled if ca in r and cb in r]
+            got = _pearson([p[0] for p in xy], [p[1] for p in xy]) if len(xy) >= 30 else float("nan")
+            ok = not math.isnan(got) and np.sign(got) == np.sign(target) and abs(got - target) <= 0.25
+            corr_rows.append({"pair": f"{ca}~{cb}", "paper": target, "reproduced": None if math.isnan(got) else round(got, 3), "ok": ok})
+    corr_frac = sum(r["ok"] for r in corr_rows) / len(corr_rows) if corr_rows else 0.0
+    details.append(f"Fig. 2a correlations (|r| >= 0.3 in the paper): {sum(r['ok'] for r in corr_rows)}/{len(corr_rows)} reproduced "
+                   f"within ±0.25 with the same sign, over {len(pooled)} residues")
+
+    # 2. Per-residue values against the authors' reference chains (Fig. 1 source data for 1MA9 A).
+    refs = sorted(ref_dir.glob("*.csv")) if ref_dir.exists() else []
+    if not refs:
+        details.append("No reference descriptors in the gold folder (run scripts/build_gold_from_source_data.py).")
+        return CheckResult("C3", "Descriptors correct", "not_scored", 0.0, details, {"correlations": corr_rows})
+    col_r: dict[str, float] = {}
+    for ref in refs:
+        header, ref_rows = read_csv(ref)
+        mine = _chain_features(ctx.workspace, ref.stem)
+        for c in [h for h in header if h not in ("resnum", "resname")]:
+            candidates = [c]
+            best = float("nan")
+            for cand in candidates:
+                xy = [(_f(rr[c]), mine.get(rr["resnum"], {}).get(cand)) for rr in ref_rows]
+                xy = [(x, y) for x, y in xy if x is not None and y is not None]
+                r = _pearson([p[0] for p in xy], [p[1] for p in xy]) if len(xy) >= max(3, len(ref_rows) // 2) else float("nan")
+                if not math.isnan(r) and (math.isnan(best) or r > best):
+                    best = r
+            key = f"{ref.stem}:{c}"
+            col_r[key] = best
+    col_ok = {k: not math.isnan(v) and v >= float(overrides.get(k.split(":")[1], min_r)) for k, v in col_r.items()}
+    frac = sum(col_ok.values()) / len(col_ok)
     score = 0.8 * frac + 0.2 * corr_frac
-    details.append(f"{sum(col_ok.values())}/{len(col_ok)} descriptors match the reference (Pearson r ≥ 0.99 on every reference chain)")
-    bad = [c for c, ok in col_ok.items() if not ok]
-    if bad:
-        details.append(f"not matching: {', '.join(bad)}")
-    return CheckResult("C3", "Descriptors correct", "pass" if frac == 1.0 else "fail", score, details,
-                       {"columns": col_ok, "correlations": corr})
+    details.append(f"{sum(col_ok.values())}/{len(col_ok)} reference descriptors match (Pearson r >= {min_r}, per-column overrides "
+                   f"{overrides or 'none'})")
+    details.append("r by descriptor: " + ", ".join(f"{k.split(':')[1]} {'n/a' if math.isnan(v) else f'{v:.3f}'}" for k, v in col_r.items()))
+    status = "pass" if frac == 1.0 and corr_frac >= 0.8 else "fail"
+    return CheckResult("C3", "Descriptors correct", status, score, details,
+                       {"columns": {k: (None if math.isnan(v) else round(v, 4)) for k, v in col_r.items()}, "correlations": corr_rows})
+
 
 
 # ---------------------------------------------------------------------------
@@ -324,13 +349,16 @@ def _interface_from_csv(path: Path, top_fraction: float) -> tuple[set[str], set[
 
 def c5_heldout(ctx: EvalContext) -> CheckResult:
     gold = ctx.gold("heldout.yaml")
-    spec_frac = 0.001
-    results, details = [], []
+    authors_p = ctx.gold_dir / "heldout_authors.yaml"
+    authors = yaml.safe_load(authors_p.read_text()) if authors_p.exists() else {}
+    results: list[float | None] = []
+    passed: list[bool] = []
+    details: list[str] = []
     for cx in gold["complexes"]:
         base = ctx.workspace / "predictions" / "ppi" / f"{cx['pdb'].lower()}_{gold['model']}_{gold['subset']}"
         csv_p, json_p = base.with_suffix(".csv"), Path(str(base) + "_interface.json")
         if csv_p.exists():
-            pa, pb = _interface_from_csv(csv_p, spec_frac)
+            pa, pb = _interface_from_csv(csv_p, gold["top_fraction"])
             src = "recomputed from pair probabilities"
         elif json_p.exists():
             j = json.loads(json_p.read_text())
@@ -339,6 +367,7 @@ def c5_heldout(ctx: EvalContext) -> CheckResult:
         else:
             details.append(f"{cx['pdb']}: no predictions")
             results.append(None)
+            passed.append(False)
             continue
         try:
             a = pdb.load_chain(cx["pdb"], cx["chain_a"], ctx.pdb_cache)
@@ -346,21 +375,35 @@ def c5_heldout(ctx: EvalContext) -> CheckResult:
         except (OSError, ValueError) as e:
             details.append(f"{cx['pdb']}: ground truth unavailable ({e})")
             results.append(None)
+            passed.append(False)
             continue
         ta, tb = pdb.interface(a, b, gold["contact_cutoff_A"])
         sa = metrics.set_scores(pa, ta, set(a.resnums))
         sb = metrics.set_scores(pb, tb, set(b.resnums))
-        acc = (sa["accuracy"] * len(a.resnums) + sb["accuracy"] * len(b.resnums)) / (len(a.resnums) + len(b.resnums))
-        rec = (sa["tp"] + sb["tp"]) / max(sa["tp"] + sb["tp"] + sa["fn"] + sb["fn"], 1)
-        prec = (sa["tp"] + sb["tp"]) / max(sa["tp"] + sb["tp"] + sa["fp"] + sb["fp"], 1)
-        results.append(acc)
-        details.append(f"{cx['pdb']}: residue accuracy {acc:.3f}, precision {prec:.2f}, recall {rec:.2f} ({src})")
-    scored = [r for r in results if r is not None]
-    passed = [r >= gold["pass_accuracy"] for r in scored]
+        tp, fp, fn = sa["tp"] + sb["tp"], sa["fp"] + sb["fp"], sa["fn"] + sb["fn"]
+        prec = tp / (tp + fp) if tp + fp else 0.0
+        rec = tp / (tp + fn) if tp + fn else 0.0
+        f1 = 2 * prec * rec / (prec + rec) if prec + rec else 0.0
+        target = cx["authors_f1"] - gold["f1_margin"]
+        ok = f1 >= target
+        results.append(f1)
+        passed.append(ok)
+        line = f"{cx['pdb']}: per-residue F1 {f1:.3f} (precision {prec:.2f}, recall {rec:.2f}; authors {cx['authors_f1']:.3f}, pass >= {target:.3f}; {src})"
+        ap = (authors.get(cx["pdb"]) or {}).get("dnn_GE_GT_predicted")
+        if ap:
+            ours, theirs = {("A", x) for x in pa} | {("B", x) for x in pb}, {("A", x) for x in ap["A"]} | {("B", x) for x in ap["B"]}
+            jac = len(ours & theirs) / len(ours | theirs) if ours | theirs else 0.0
+            line += f"; overlap with the authors' predicted residues (Jaccard) {jac:.2f}"
+        details.append(line)
     score = sum(passed) / len(gold["complexes"])
-    status = "pass" if len(scored) == len(gold["complexes"]) and all(passed) else (
-        "not_scored" if not scored and any("unavailable" in d for d in details) else "fail")
-    return CheckResult("C5", "Held-out PPI interfaces", status, score, details, {"accuracy": results})
+    if all(passed):
+        status = "pass"
+    elif any("unavailable" in d for d in details) and not any(r is not None for r in results):
+        status = "not_scored"
+    else:
+        status = "fail"
+    details.append("SI Tables 4-6 report accuracy 0.721 / 0.803 / 0.786 under a definition the published data do not allow us to reconstruct.")
+    return CheckResult("C5", "Held-out PPI interfaces", status, score, details, {"f1": results})
 
 
 # ---------------------------------------------------------------------------
@@ -379,10 +422,20 @@ def _corona(ws: Path) -> list[dict]:
 
 
 def _score_for(rows: list[dict], np_name: str, protein: str) -> float | None:
-    for r in rows:
-        if np_name.lower() in r["np_name"].lower() and protein.lower() in r["protein"].lower():
-            return _f(r["score"])
-    return None
+    """Mean score over rows whose NP and protein names contain the given strings (several SWNT types average)."""
+    vals = [_f(r["score"]) for r in rows if np_name.lower() in r["np_name"].lower() and protein.lower() in r["protein"].lower()]
+    vals = [v for v in vals if v is not None]
+    return sum(vals) / len(vals) if vals else None
+
+
+def _residue_labels(pdb_id: str, chains: list[str], residues: list[str], cache: Path) -> set[str]:
+    labels = set()
+    for ch in chains:
+        c = pdb.load_chain(pdb_id, ch, cache)
+        for i, rn in enumerate(c.resnums):
+            if rn in residues:
+                labels.add(c.label(i))
+    return labels
 
 
 def c6_pni(ctx: EvalContext) -> CheckResult:
@@ -397,7 +450,7 @@ def c6_pni(ctx: EvalContext) -> CheckResult:
         if kind == "review":
             v = ctx.reviews.get(fid)
             outcome[fid] = None if v is None else v == "pass"
-            details.append(f"{fid}: {'reviewed ' + v if v else 'needs review'} - {fd['desc']}")
+            details.append(f"{fid}: {'reviewed ' + v if v else 'needs review'} - {fd['desc'].strip()}")
             continue
         if kind == "ranking":
             if "less_than" in fd:
@@ -406,35 +459,40 @@ def c6_pni(ctx: EvalContext) -> CheckResult:
                     s1, s2 = _score_for(corona, np1, p1), _score_for(corona, np2, p2)
                     checks.append(None if s1 is None or s2 is None else s1 < s2)
             else:
-                prots = {r["protein"] for r in corona if fd["higher_np"].lower() in r["np_name"].lower()}
-                checks = [None if (lo := _score_for(corona, fd["lower_np"], p)) is None or (hi := _score_for(corona, fd["higher_np"], p)) is None
-                          else lo < hi for p in prots] or [None]
-            outcome[fid] = None if None in checks else all(checks)
-            details.append(f"{fid}: {outcome[fid]} - {fd['desc']}")
+                prots = sorted({r["protein"] for r in corona if fd["higher_np"].lower() in r["np_name"].lower()})
+                checks = []
+                for prot in prots:
+                    lo, hi = _score_for(corona, fd["lower_np"], prot), _score_for(corona, fd["higher_np"], prot)
+                    checks.append(None if lo is None or hi is None else lo < hi)
+                checks = checks or [None]
+            outcome[fid] = False if None in checks else all(checks)
+            details.append(f"{fid}: {'yes' if outcome[fid] else 'no'} - {fd['desc'].strip()}")
             continue
         case = _find_case(cases, fd["case_match"])
         j = ctx.workspace / "predictions" / "pni" / f"{case['case']}_interface.json" if case else None
         if not case or not j or not j.exists():
             outcome[fid] = False
-            details.append(f"{fid}: no prediction for this case - {fd['desc']}")
+            details.append(f"{fid}: no prediction for this case")
             continue
         pred = [str(x) for x in json.loads(j.read_text()).get("protein_residues", [])]
-        try:
-            chain = pdb.load_chain(case["pdb_id"], case["chain"], ctx.pdb_cache)
-        except (OSError, ValueError) as e:
-            outcome[fid] = None
-            details.append(f"{fid}: ground truth unavailable ({e})")
-            continue
         if kind == "residues":
-            labels = {chain.label(i) for i, rn in enumerate(chain.resnums) if rn in pred}
-            hits = sorted(labels & set(fd["residues"]))
-            outcome[fid] = len(hits) >= fd["min_hits"]
-            details.append(f"{fid}: {len(hits)}/{len(fd['residues'])} expected residues predicted ({', '.join(hits) or 'none'})")
-        elif kind == "n_terminal":
-            idx = [chain.resnums.index(r) for r in pred if r in chain.resnums]
-            share = (sum(i < fd["fraction"] * len(chain.resnums) for i in idx) / len(idx)) if idx else 0.0
+            try:
+                labels = _residue_labels(case["pdb_id"], fd.get("chains") or [case["chain"]], pred, ctx.pdb_cache)
+            except (OSError, ValueError) as e:
+                outcome[fid] = None
+                details.append(f"{fid}: structure unavailable ({e})")
+                continue
+            hits = sorted(labels & set(fd["required"]))
+            named = sorted(labels & set(fd.get("reported", [])))
+            outcome[fid] = len(hits) == len(fd["required"])
+            details.append(f"{fid}: required {', '.join(fd['required'])}: {len(hits)} predicted; residues named in the text "
+                           f"that were predicted: {', '.join(named) or 'none'}")
+        elif kind == "overlap":
+            lo, hi = fd["region"]
+            nums = [int(x) for x in pred if str(x).lstrip("-").isdigit()]
+            share = sum(lo <= n <= hi for n in nums) / len(nums) if nums else 0.0
             outcome[fid] = share >= fd["min_share"]
-            details.append(f"{fid}: {share:.0%} of predicted residues in the N-terminal third")
+            details.append(f"{fid}: {share:.0%} of predicted residues in {lo}-{hi} (pass at {fd['min_share']:.0%})")
     passed = sum(1 for v in outcome.values() if v)
     pending = sum(1 for v in outcome.values() if v is None)
     score = passed / len(outcome)
@@ -447,6 +505,8 @@ def c6_pni(ctx: EvalContext) -> CheckResult:
     details.insert(0, f"{passed}/{len(outcome)} findings matched, {pending} pending review (pass at {gold['pass_count']})")
     return CheckResult("C6", "Protein-NP predictions", status, score, details, {"findings": outcome})
 
+
+# ---------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------
 RUBRIC = ["fidelity", "execution", "accuracy", "completeness", "rigor"]

@@ -1,9 +1,13 @@
-# C6: protein-nanoparticle findings from the paper (Fig. 5, Supplementary Figs. 24-28).
+# C6: protein-nanoparticle findings. Targets come from the paper and its Fig. 5 source data
+# (pni_authors.yaml, built by scripts/build_gold_from_source_data.py).
+#
 # kind:
-#   residues:  predicted protein interface (from <case>_interface.json) must include at least `min_hits` of `residues`
-#   n_terminal: most predicted residues sit in the first `fraction` of the chain
-#   ranking:   corona_ranking.csv scores must satisfy each `less_than` pair
-#   review:    no automatic rule; shown to a reviewer (LLM judge or person) with the agent's interface files
+#   residues: predicted protein interface (<case>_interface.json, residue numbers of `chains`) must contain
+#             every residue in `required` (the named residues the authors' own prediction also contains)
+#   overlap:  share of the agent's predicted residues inside the authors' predicted region >= min_share
+#   ranking:  corona_ranking.csv scores must satisfy each `less_than` pair (np names and proteins matched
+#             case-insensitively as substrings)
+#   review:   no automatic rule; judged by a reviewer or `mathbac judge`
 
 pass_count: 5     # of the 6 findings below
 
@@ -11,27 +15,33 @@ findings:
   - id: cnt_hmpo
     case_match: ["1cxp"]
     kind: residues
-    residues: [TYR293, TYR313, ARG294, ARG307]
-    min_hits: 3
-    desc: "CNT-hMPO (1CXP): Tyr293, Tyr313, Arg294, Arg307 among the predicted sites (matches Kagan et al. MD)"
+    chains: [A, C]
+    required: [ARG294, TYR313]
+    reported: [TYR293, TYR313, ARG294, ARG307]
+    desc: >-
+      CNT-hMPO (1CXP, MPO numbering over chains A and C): Arg294 and Tyr313 predicted. The text names
+      Tyr293, Tyr313, Arg294 and Arg307; the authors' own prediction (Fig. 5d/e source data) contains
+      Arg294 and Tyr313 only.
   - id: gqd_psma
-    case_match: ["5khb"]
-    kind: n_terminal
-    fraction: 0.34
+    case_match: ["psm", "5i55", "5khb"]
+    kind: overlap
+    region: [11, 22]
     min_share: 0.5
-    desc: "Carboxylated GQD binds PSM-α (5KHB) near the N-terminus (rule is provisional; confirm against Fig. 5a)"
+    desc: >-
+      GQD-PSM-α: predicted sites fall where the authors' prediction does (residues 11-22 of the 5I55 peptide).
+      The text says 5KHB and "near the N-terminus"; the source data use 5I55 and predict the C-terminal half.
   - id: corona
     kind: ranking
     less_than:
       - [[SWNT, albumin], [SWNT, apolipoprotein]]
       - [[SWNT, albumin], [SWNT, histidine-rich glycoprotein]]
       - [[SWNT, albumin], [SWNT, galectin-3-binding protein]]
-    desc: "On SWNTs, albumin ranks below apolipoprotein, HRG and galectin-3BP"
+    desc: "On SWNTs, albumin ranks below apolipoprotein, HRG and galectin-3BP (Fig. 5f: 0.78-0.80 vs 0.93-0.99)"
   - id: spherical_lower
     kind: ranking
-    lower_np: spherical_C
+    lower_np: spherical
     higher_np: SWNT
-    desc: "Spherical carbon NPs score below SWNTs for every corona protein"
+    desc: "The 5 nm spherical carbon NP scores below SWNTs for every corona protein (Fig. 5f: 0.64-0.77 vs 0.78-0.99)"
   - id: gqd_iapp
     case_match: ["2l86"]
     kind: review

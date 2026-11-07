@@ -75,7 +75,8 @@ def main():
     elif a.kind == "opd":
         import local_OPD
 
-        c1 = ca.rename(columns={"x": "x_coord", "y": "y_coord", "z": "z_coord"})
+        # local_OPD reads biopandas-style columns; residue_name selects the residue mass used as the OPD weight.
+        c1 = ca.rename(columns={"x": "x_coord", "y": "y_coord", "z": "z_coord", "resname": "residue_name"})
         arr = local_OPD.GOS_single(c1)
         write(ca, {"opd_5": arr[:, 0], "opd_7": arr[:, 1], "opd_10": arr[:, 2], "opd_15": arr[:, 3]}, a.out)
 
