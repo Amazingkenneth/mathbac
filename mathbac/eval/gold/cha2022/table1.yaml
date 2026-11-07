@@ -2,7 +2,11 @@
 # Rows: model -> subset -> [accuracy, auc, f1] as [mean, sd] pairs.
 # Column order checked against the text (e.g. DNN GT: acc 80.8 ± 1, AUC 87.7 ± 0.7, F1 80.0 ± 1.2).
 
-tolerance: 0.03          # each recomputed mean must be within this of the published mean
+tolerance: 0.03
+# Table 1's F1 is the F1 of the NON-contact class: the released DNN_train.py calls f1_score(y_test, y_pred) with
+# sklearn's default positive label 1, and label 1 is non-contact in the released arrays. Confirmed on random forest
+# trained on the authors' arrays: non-contact F1 0.805 / 0.740 / 0.790 / 0.545 vs Table 1 0.803 / 0.737 / 0.789 / 0.545.
+f1_class: non_contact          # each recomputed mean must be within this of the published mean
 headline: [[dnn, GT], [dnn, GE_GT], [dnn, all], [dnn, CH], [rf, all], [xgb, all]]
 
 table:

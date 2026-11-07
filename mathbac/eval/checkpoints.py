@@ -298,7 +298,7 @@ def c4_table1(ctx: EvalContext) -> CheckResult:
             if errs:
                 missing.append(f"{model}_{subset}")
                 continue
-            res = metrics.per_fold(arr["fold"], arr["y_true"], arr["y_score"])
+            res = metrics.per_fold(arr["fold"], arr["y_true"], arr["y_score"], f1_class=gold.get("f1_class", "contact"))
             got[(model, subset)] = res
             for m, (mean, _sd) in mets.items():
                 good = abs(res[m][0] - mean) <= tol

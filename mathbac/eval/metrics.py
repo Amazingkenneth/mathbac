@@ -40,14 +40,23 @@ def roc_auc(y_true: np.ndarray, y_score: np.ndarray) -> float:
     return float((ranks[y_true == 1].sum() - n_pos * (n_pos + 1) / 2) / (n_pos * n_neg))
 
 
-def per_fold(fold: np.ndarray, y_true: np.ndarray, y_score: np.ndarray) -> dict[str, tuple[float, float]]:
-    """Mean and s.d. of accuracy, AUC and F1 across folds."""
+def per_fold(fold: np.ndarray, y_true: np.ndarray, y_score: np.ndarray, f1_class: str = "contact") -> dict[str, tuple[float, float]]:
+    """Mean and s.d. of accuracy, AUC and F1 across folds.
+
+    f1_class="non_contact" scores F1 for the non-contact class (y = 0), which is what the paper's Table 1 reports:
+    the released code calls sklearn's f1_score with its default positive label 1, and label 1 is non-contact there.
+    """
     vals: dict[str, list[float]] = {"accuracy": [], "auc": [], "f1": []}
     for k in np.unique(fold):
         m = fold == k
         vals["accuracy"].append(accuracy(y_true[m], y_score[m]))
         vals["auc"].append(roc_auc(y_true[m], y_score[m]))
-        vals["f1"].append(f1(y_true[m], y_score[m]))
+        if f1_class == "non_contact":
+            yt = 1 - np.asarray(y_true[m]).astype(int)
+            pred_non = (np.asarray(y_score[m]) < 0.5).astype(float)
+            vals["f1"].append(f1(yt, pred_non))
+        else:
+            vals["f1"].append(f1(y_true[m], y_score[m]))
     return {k: (float(np.nanmean(v)), float(np.nanstd(v))) for k, v in vals.items()}
 
 
