@@ -1,0 +1,36 @@
+- claim: GT descriptors alone predict contacts better than GE alone, and GE better than CH alone
+  verdict: supported
+  evidence:
+  - ml/cv/predictions/dnn_GT.npz
+  - ml/cv/predictions/rf_GT.npz
+  - ml/cv/predictions/dnn_GE.npz
+  - ml/cv/predictions/dnn_CH.npz
+  notes: DNN AUC GT 0.836 > GE 0.785 > CH 0.612; RF 0.903 > 0.845 > 0.608
+- claim: Adding CH descriptors to GE or GT changes performance by about two points or less
+  verdict: contradicted
+  evidence:
+  - ml/cv/predictions/dnn_CH_GE.npz
+  - ml/cv/predictions/dnn_CH_GT.npz
+  notes: 'DNN AUC change: +GE +0.049, +GT +0.002'
+- claim: RF, XGB and the DNN perform similarly and much better than LR, GNB and SVM
+  verdict: supported
+  evidence:
+  - ml/cv/predictions/rf_all.npz
+  - ml/cv/predictions/lr_all.npz
+  - ml/cv/predictions_scaled/lr_all.npz
+  notes: 'Without scaling (the paper''s condition): min(RF, XGB, DNN) AUC 0.874 vs max(LR, GNB, SVM) 0.677.'
+- claim: GE+GT models predict held-out, non-homologous interfaces with about 80% accuracy
+  verdict: inconclusive
+  evidence:
+  - predictions/ppi/6wzo_dnn_GE_GT.csv
+  - predictions/ppi/6nqn_dnn_GE_GT.csv
+  - predictions/ppi/1c29_dnn_GE_GT.csv
+  notes: The SI metric cannot be reconstructed; per-residue F1 0.15 / 0.13 / 0.27 vs the authors' published 0.53 / 0.40 /
+    0.37.
+- claim: Models trained on protein-protein complexes predict nanoparticle-protein sites consistent with experiments
+  verdict: inconclusive
+  evidence:
+  - predictions/pni/CNT-1CXP_interface.json
+  - predictions/pni/GQD-2L86_interface.json
+  notes: Corona ranking and ZnO not attempted at L2 (NP models unavailable). hMPO and hIAPP site predictions need expert review
+    against the cited experiments.

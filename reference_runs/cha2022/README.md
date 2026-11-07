@@ -16,6 +16,7 @@ Two diagnostics use the authors' own saved models and test features:
 - `authors_threshold_search.py`: searches threshold, scaling and output column for settings that reproduce the
   published Fig. 4 interface sets. None does.
 
-Results and the list of inconsistencies found are in each run's `report/report.md` and in `tasks/cha2022/README.md`.
+Results (report, claim verdicts, evaluator report) are in `results/<folder>/`: L3 scores 65.4/100, L2 55.3/100. A
+summary table and the list of inconsistencies found are in `tasks/cha2022/README.md`.
 Run the scripts from a run workspace (they use relative paths `data/`, `features/`, `ml/`, `predictions/`), with the
 capsule environment from `env/setup_local.sh`.

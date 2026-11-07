@@ -48,8 +48,8 @@ def dnn(subset, X):
     sc = np.load(d / "scaler.npz")
     rng = np.where(sc["data_max"] > sc["data_min"], sc["data_max"] - sc["data_min"], 1.0)
     Xs = (X - sc["data_min"]) / rng
-    return np.mean([keras.models.load_model(str(f), compile=False).predict(Xs, batch_size=8192)[:, 1]
-                    for f in sorted(d.glob("fold*.h5"))], axis=0)
+    q = [keras.models.load_model(str(f), compile=False).predict(Xs, batch_size=8192)[:, 0].astype(np.float64) for f in sorted(d.glob("fold*.h5"))]
+    return 1.0 - np.mean(q, axis=0)  # float64 from P(class 0): P(class 1) saturates at 1.0 in float32 and ties the top pairs
 
 
 def write(out, pdb, model, subset, s, ra, rb):
@@ -58,9 +58,9 @@ def write(out, pdb, model, subset, s, ra, rb):
         w = csv.writer(fh)
         w.writerow(["res_a", "res_b", "prob"])
         for i, j, p in zip(ia, ib, s):
-            w.writerow([ra[i], rb[j], f"{p:.6f}"])
+            w.writerow([ra[i], rb[j], repr(float(p))])
     n = max(int(len(s) * TOP), 1)
-    top = np.argsort(s)[-n:]
+    top = np.where(s >= np.sort(s)[-n])[0]  # every pair tied with the last one included
     iface = {"chain_a": sorted({ra[ia[k]] for k in top}, key=lambda x: (len(x), x)),
              "chain_b": sorted({rb[ib[k]] for k in top}, key=lambda x: (len(x), x)), "top_fraction": TOP, "n_pairs_scored": int(len(s))}
     (out / f"{pdb}_{model}_{subset}_interface.json").write_text(json.dumps(iface))

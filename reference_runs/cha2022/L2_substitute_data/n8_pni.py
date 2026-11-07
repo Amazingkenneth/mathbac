@@ -107,8 +107,8 @@ def dnn_scores(X):
     sc = np.load(d / "scaler.npz")
     rng = np.where(sc["data_max"] > sc["data_min"], sc["data_max"] - sc["data_min"], 1.0)
     Xs = (X - sc["data_min"]) / rng
-    return np.mean([keras.models.load_model(str(f), compile=False).predict(Xs, batch_size=4096)[:, 1]
-                    for f in sorted(d.glob("fold*.h5"))], axis=0)
+    q = [keras.models.load_model(str(f), compile=False).predict(Xs, batch_size=4096)[:, 0].astype(np.float64) for f in sorted(d.glob("fold*.h5"))]
+    return 1.0 - np.mean(q, axis=0)  # float64 from P(class 0): P(class 1) saturates at 1.0 in float32 and ties the top pairs
 
 
 def main():
@@ -150,9 +150,9 @@ def main():
             w = csv.writer(f)
             w.writerow(["np_node", "res_protein", "prob"])
             for a, b, p in zip(jn, ip, s):
-                w.writerow([a + 1, keys[b][1], f"{p:.6f}"])
+                w.writerow([a + 1, keys[b][1], repr(float(p))])
         n = max(int(len(s) * TOP), 1)
-        top = np.argsort(s)[-n:]
+        top = np.where(s >= np.sort(s)[-n])[0]  # every pair tied with the last one included
         res = sorted({keys[ip[k]][1] for k in top}, key=lambda x: (len(x), x))
         out = {"protein_residues": res, "protein_chains": chains, "np_nodes": sorted({int(jn[k]) + 1 for k in top}),
                "top_fraction": TOP, "n_pairs_scored": int(len(s))}

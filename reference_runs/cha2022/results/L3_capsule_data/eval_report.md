@@ -11,7 +11,7 @@ Access level **L3**, plan mode **direct**, roles **single-agent (Claude in the c
 | C2 Training data rebuilt | fail | 0.33 | 10 | training pairs: 385 (paper: 464) |
 | C3 Descriptors correct | pass | 0.97 | 20 | Fig. 2a correlations (|r| >= 0.3 in the paper): 18/21 reproduced within ±0.25 with the same sign, over 163812 residues |
 | C4 Table 1 reproduced | fail | 0.88 | 25 | 96/126 Table 1 cells within ±0.03 of the paper |
-| C5 Held-out PPI interfaces | fail | 0.00 | 15 | 6WZO: per-residue F1 0.227 (precision 0.79, recall 0.13; authors 0.533, pass >= 0.433; recomputed from pair probabilities); overlap with the authors' predicted residues (Jaccard) 0.09 |
+| C5 Held-out PPI interfaces | fail | 0.00 | 15 | 6WZO: per-residue F1 0.211 (precision 0.83, recall 0.12; authors 0.533, pass >= 0.433; recomputed from pair probabilities; 1 extra pairs tied at the cut); overlap with the authors' predicted residues (Jaccard) 0.09 |
 | C6 Protein-NP predictions | needs_review | 0.50 | 15 | 3/6 findings matched, 2 pending review (pass at 5) |
 | C7 Report and claim verdicts | needs_review | 0.00 | 0 | Score the report 1-5 on fidelity, execution, accuracy, completeness, rigor in eval/c7_scores.yaml (by a reviewer or `mathbac judge`). |
 
@@ -43,9 +43,9 @@ Access level **L3**, plan mode **direct**, roles **single-agent (Claude in the c
 - orderings: gt_gt_ge=yes, ge_gt_ch=yes, tree_vs_linear=yes, ch_adds_little_ge=yes, ch_adds_little_gt=yes
 
 ### C5 Held-out PPI interfaces
-- 6WZO: per-residue F1 0.227 (precision 0.79, recall 0.13; authors 0.533, pass >= 0.433; recomputed from pair probabilities); overlap with the authors' predicted residues (Jaccard) 0.09
-- 6NQN: per-residue F1 0.138 (precision 0.12, recall 0.15; authors 0.400, pass >= 0.300; recomputed from pair probabilities); overlap with the authors' predicted residues (Jaccard) 0.17
-- 1C29: per-residue F1 0.176 (precision 0.14, recall 0.23; authors 0.366, pass >= 0.266; recomputed from pair probabilities); overlap with the authors' predicted residues (Jaccard) 0.08
+- 6WZO: per-residue F1 0.211 (precision 0.83, recall 0.12; authors 0.533, pass >= 0.433; recomputed from pair probabilities; 1 extra pairs tied at the cut); overlap with the authors' predicted residues (Jaccard) 0.09
+- 6NQN: per-residue F1 0.164 (precision 0.14, recall 0.19; authors 0.400, pass >= 0.300; recomputed from pair probabilities); overlap with the authors' predicted residues (Jaccard) 0.13
+- 1C29: per-residue F1 0.178 (precision 0.15, recall 0.23; authors 0.366, pass >= 0.266; recomputed from pair probabilities); overlap with the authors' predicted residues (Jaccard) 0.08
 - SI Tables 4-6 report accuracy 0.721 / 0.803 / 0.786 under a definition the published data do not allow us to reconstruct.
 
 ### C6 Protein-NP predictions

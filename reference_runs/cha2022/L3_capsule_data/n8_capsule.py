@@ -46,7 +46,7 @@ def residues(fname, chain):
 def interface(s, res, n_nodes):
     ip, jn = np.divmod(np.arange(len(s)), n_nodes)
     n = max(int(len(s) * TOP), 1)
-    top = np.argsort(s)[-n:]
+    top = np.where(s >= np.sort(s)[-n])[0]  # every pair tied with the last one included
     return {"protein_residues": sorted({res[ip[k]] for k in top}, key=lambda x: (len(x), x)),
             "np_nodes": sorted({int(jn[k]) + 1 for k in top}), "top_fraction": TOP, "n_pairs_scored": int(len(s))}
 
@@ -57,7 +57,7 @@ def save_case(case, s, res, n_nodes, extra):
     with open(f"predictions/pni/{case}.csv", "w", newline="") as f:
         w = csv.writer(f); w.writerow(["np_node", "res_protein", "prob"])
         for a, b, p in zip(jn, ip, s):
-            w.writerow([a + 1, res[b], f"{p:.6f}"])
+            w.writerow([a + 1, res[b], repr(float(p))])
     iface = {**interface(s, res, n_nodes), **extra}
     Path(f"predictions/pni/{case}_interface.json").write_text(json.dumps(iface))
     print(case, len(iface["protein_residues"]), "residues:", iface["protein_residues"][:30], flush=True)

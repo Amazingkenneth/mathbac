@@ -78,12 +78,19 @@ def test_c5_scores_from_pair_probabilities(tmp_path, monkeypatch):
     d = c.workspace / "predictions" / "ppi"
     d.mkdir(parents=True)
     for pid in ("6wzo", "6nqn", "1c29"):
-        rows = ["res_a,res_b,prob"] + [f"{i},{j},{0.9 if i == j else 0.01}" for i in range(1, 11) for j in range(1, 11)]
+        rows = ["res_a,res_b,prob"] + [f"{i},{j},{0.9 - i / 1000 if i == j else 0.01}" for i in range(1, 11) for j in range(1, 11)]
         (d / f"{pid}_dnn_GE_GT.csv").write_text("\n".join(rows))
     r = cp.c5_heldout(c)
     # top 0.1% of 100 pairs = 1 pair -> 1 of 10 true interface residues per chain: precision 1, recall 0.1
     assert r.status == "fail"
     assert all(abs(f - 2 * 0.1 / 1.1) < 1e-9 for f in r.data["f1"])
+
+
+def test_c5_includes_pairs_tied_at_the_cut(tmp_path):
+    p = tmp_path / "x.csv"
+    p.write_text("\n".join(["res_a,res_b,prob"] + [f"{i},{j},{0.9 if i == j else 0.01}" for i in range(1, 11) for j in range(1, 11)]))
+    a, b, extra = cp._interface_from_csv(p, 0.001)
+    assert extra == 9 and a == b == {str(i) for i in range(1, 11)}
 
 
 def test_c6_residue_and_ranking_findings(tmp_path, monkeypatch):

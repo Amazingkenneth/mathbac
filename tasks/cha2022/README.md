@@ -91,6 +91,30 @@ A good spec (N1) should flag these as `conflict` or `code_only`. Each was checke
 - **Labels and balance.** Class 0 is the contact class in the released arrays; the training arrays are undersampled (`binary_under_*`), which the paper does not say.
 - **Missing pieces.** `PPI_descriptors_cal.py` imports a `descriptor_calc` package that is not in the repository and needs PyMOL; the CH tables (`amino_acid_charge.csv`, `amino_acid_atom_count.csv`) and the 464-pair list are only in the Code Ocean capsule.
 
+## Reference runs
+
+Two direct runs (one Claude agent acting as every worker role; stage scripts and results in
+`reference_runs/cha2022/`). DNN at 100 epochs per fold, not 1000.
+
+| Checkpoint (weight) | L3, capsule data | L2, substitute data |
+|---|---|---|
+| C0 environment (5) | 0.62: GHECOM needs registration; the unified scripts need PyMOL (no Python 3.8 wheel) and a missing package | 0.62 |
+| C1 spec (10) | 1.00 | 1.00 |
+| C2 data (10) | 0.33: 385 usable pairs of the capsule's 389 (paper: 464) | 0.33: 200 RCSB heterodimers |
+| C3 descriptors (20) | 0.97: all 20 reference columns r = 1.000; 18/21 Fig. 2a correlations | 0.71: 14/20 columns (GHECOM approximation r 0.22–0.96); 16/21 correlations |
+| C4 Table 1 (25) | 0.88: 96/126 cells | 0.78: 97/126 cells |
+| C5 held-out (15) | 0.00: F1 0.21 / 0.16 / 0.18 | 0.33: F1 0.15 / 0.13 / 0.27 |
+| C6 protein-NP (15) | 0.50: PSM-α region and both corona trends; hMPO residues missed | 0.00: no corona models at L2 |
+| **Score** | **65.4** | **55.3** |
+
+On independent data (L2) the paper's descriptor ranking (GT > GE > CH) and the tree/DNN-over-linear gap hold. The
+near-chance linear models are a scaling artifact on both data sets: without scaling, LR falls to AUC 0.565 on every
+subset containing GE (paper: 0.56) and SVM to 0.656 (paper: 0.65); with per-fold MinMax scaling LR reaches 0.81.
+
+Interface files follow the top 0.1% of pairs with every pair tied at the cut included. A saturated DNN written with
+six decimals gives many pairs a probability of exactly 1; the N7 acceptance check now rejects that, and DNN scores
+are computed as 1 − mean P(non-contact) in float64.
+
 ## Running stages
 
 ```bash

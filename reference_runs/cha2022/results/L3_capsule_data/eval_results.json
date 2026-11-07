@@ -1409,16 +1409,16 @@
    "status": "fail",
    "score": 0.0,
    "details": [
-    "6WZO: per-residue F1 0.227 (precision 0.79, recall 0.13; authors 0.533, pass >= 0.433; recomputed from pair probabilities); overlap with the authors' predicted residues (Jaccard) 0.09",
-    "6NQN: per-residue F1 0.138 (precision 0.12, recall 0.15; authors 0.400, pass >= 0.300; recomputed from pair probabilities); overlap with the authors' predicted residues (Jaccard) 0.17",
-    "1C29: per-residue F1 0.176 (precision 0.14, recall 0.23; authors 0.366, pass >= 0.266; recomputed from pair probabilities); overlap with the authors' predicted residues (Jaccard) 0.08",
+    "6WZO: per-residue F1 0.211 (precision 0.83, recall 0.12; authors 0.533, pass >= 0.433; recomputed from pair probabilities; 1 extra pairs tied at the cut); overlap with the authors' predicted residues (Jaccard) 0.09",
+    "6NQN: per-residue F1 0.164 (precision 0.14, recall 0.19; authors 0.400, pass >= 0.300; recomputed from pair probabilities); overlap with the authors' predicted residues (Jaccard) 0.13",
+    "1C29: per-residue F1 0.178 (precision 0.15, recall 0.23; authors 0.366, pass >= 0.266; recomputed from pair probabilities); overlap with the authors' predicted residues (Jaccard) 0.08",
     "SI Tables 4-6 report accuracy 0.721 / 0.803 / 0.786 under a definition the published data do not allow us to reconstruct."
    ],
    "data": {
     "f1": [
-     0.22680412371134023,
-     0.13793103448275862,
-     0.17647058823529413
+     0.21052631578947367,
+     0.16393442622950818,
+     0.1782178217821782
     ]
    },
    "weight": 15,

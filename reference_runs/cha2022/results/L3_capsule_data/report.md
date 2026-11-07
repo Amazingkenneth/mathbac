@@ -8,7 +8,7 @@ Access level L3: paper, SI, released code and the Code Ocean capsule's data. All
 - **Table 1:** 96/126 cells within ±0.03. Logistic regression, naive Bayes, SVM and random forest reproduce Table 1 to the third decimal on almost every cell, F1 included. The DNN is 0.03-0.07 lower on most subsets because it was trained for 100 epochs, not 1000 (CPU only); its CH-only row matches. XGBoost is 0.03-0.05 lower with library defaults (the paper does not give its hyper-parameters).
 - **Linear models:** the paper's near-chance LR / GNB / SVM numbers are reproduced only without feature scaling (LR all: 0.553 / 0.565, exactly Table 1). With per-fold MinMax scaling, LR reaches AUC 0.805 on all descriptors, so the paper's large gap between linear and tree models is mostly a scaling artifact.
 - **Table 1's F1 is the non-contact class's F1** (sklearn's default positive label in the released arrays). This run's tables use that definition.
-- **Held-out interfaces:** per-residue F1 0.23 / 0.17 / 0.18 for 6WZO / 6NQN / 1C29, below the authors' published predictions (0.53 / 0.40 / 0.37 under the same metric). The authors' own released models applied to their own released test features do not reproduce their Fig. 4 predictions either (section 4).
+- **Held-out interfaces:** per-residue F1 0.21 / 0.16 / 0.18 for 6WZO / 6NQN / 1C29, below the authors' published predictions (0.53 / 0.40 / 0.37 under the same metric). The authors' own released models applied to their own released test features do not reproduce their Fig. 4 predictions either (section 4).
 - **Protein-corona trends reproduce:** albumin is predicted to bind SWNTs least, and the 5 nm carbon sphere binds every protein less than SWNTs, as in Fig. 5f. The hMPO residues named in the text (Arg294, Tyr313) are not among the predicted sites.
 
 ## 2. Table 1 (tenfold CV on the authors' balanced training arrays)
@@ -38,8 +38,8 @@ Ground truth: residues with a Cα within 7 Å of the partner chain (identical to
 
 | Complex | Predicted residues | True interface residues | Precision | Recall | F1 | Authors' published F1 |
 |---|---|---|---|---|---|---|
-| 6WZO | 14 | 83 | 0.79 | 0.13 | 0.23 | 0.53 |
-| 6NQN | 34 | 26 | 0.15 | 0.19 | 0.17 | 0.40 |
+| 6WZO | 12 | 83 | 0.83 | 0.12 | 0.21 | 0.53 |
+| 6NQN | 35 | 26 | 0.14 | 0.19 | 0.16 | 0.40 |
 | 1C29 | 62 | 39 | 0.15 | 0.23 | 0.18 | 0.37 |
 
 SI Tables 4-6 report accuracy 0.721 / 0.803 / 0.786. That metric cannot be reconstructed from the published data: the authors' own Fig. 4 predicted sets, scored per residue, give F1 0.53 / 0.40 / 0.37.
@@ -54,7 +54,7 @@ Running the capsule's ten GE+GT DNN models (dnn_models/re_model_GE_GT*.h5) on th
 |---|---|---|
 | CNT-1CXP | capsule data_feature_1cxp_AC_ASWNT_14_0_500A_13_reduced.npy | 2, 3, 4, 5, 6, 33, 52, 103, 104, 155, 216, 487 |
 | GQD-PSMa | hybrid: N4 pipeline with GHECOM approximation on 5I55 + G3 | 20 |
-| GQD-2L86 | capsule data_feature_2l86_Aiapp_gqd_atomic.npy | 1, 3, 6, 36 |
+| GQD-2L86 | capsule data_feature_2l86_Aiapp_gqd_atomic.npy | 1, 4, 6, 37 |
 | GQD-6ZRF | capsule data_feature_6zrf_combined_Aiapp_gqd_atomic.npy | 13, 14, 15, 16, 17, 20, 27, 28, 30, 109, 133, 135, 137, 139, 140, 141, 142, 148, 150, 157, 158, 159, 160, 161, 164, 165, 170, 172, 174, 181, 279, 292 |
 
 Protein corona (score = fraction of residue-node pairs predicted in contact; the released code does not define the paper's 'binding probability'):
