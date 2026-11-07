@@ -1,0 +1,37 @@
+# Source: PPI2PNI_Info.xlsx (Jessica Ma) and the released code.
+name: multifractal_dimension
+tier: 1
+title: Node-based multifractal dimension
+installed: true
+purpose: Per-residue fractal dimension plus four box-growth features on the 7 Å Cα graph.
+source: MFD.py in the released code
+invoke: python /opt/mathbac/tools/descriptors.py mfd --ca {ca} --out {out} --cutoff {cutoff} --box-radius {box_radius}
+args:
+  ca:
+    input: true
+    description: data/chains/<pdb>_<chain>.csv (resnum,resname,x,y,z)
+    type: string
+  out:
+    description: Output CSV path in the workspace
+    type: string
+  cutoff:
+    type: number
+    required: false
+    default: 7.0
+    description: 'Graph edge cutoff in Å (paper: 7)'
+  box_radius:
+    type: integer
+    required: false
+    default: 5
+    description: 'Box radius for the MFD growth features (released code: 5)'
+inputs: Cα coordinate CSV.
+outputs: CSV resnum,resname,mfd,mfd_1..mfd_4.
+cost: Seconds to minutes per chain.
+resources:
+  cpus: 1
+  mem_gb: 4
+  time_limit_min: 60
+pitfalls:
+- more_box() works on the largest connected component only; residues outside it need explicit handling. Check row
+  counts.
+smoke_test: /opt/mathbac/tools/smoke_test.sh multifractal_dimension

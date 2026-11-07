@@ -1,0 +1,29 @@
+# Source: PPI2PNI_Info.xlsx (Jessica Ma) and the released code.
+name: unified_pni_descriptors
+tier: 1
+title: 'Unified descriptors: released PNI pipeline'
+installed: true
+purpose: Released pipeline for protein-nanoparticle descriptor matrices (PNI_descriptors_cal.py).
+source: https://github.com/jessqma/unified_fast
+invoke: cd /opt/unified_fast/code/unified_descriptors && python PNI_descriptors_cal.py {pdb_id} {chain} {np_name}
+args:
+  pdb_id:
+    description: Protein PDB id
+  chain:
+    description: Protein chain
+  np_name:
+    description: NP structure name in pdb_np/, e.g. GQD7_atomic
+inputs: Protein PDB and atomistic NP PDB under pdb_protein/ and pdb_np/.
+outputs: Protein-NP descriptor matrix (.npy).
+pni_translatability: Yes.
+cost: Minutes per case.
+resources:
+  cpus: 2
+  mem_gb: 8
+  time_limit_min: 120
+pitfalls:
+- NP GNM uses a 4 Å Kirchhoff cutoff on non-hydrogen atoms (GNM.gnm_sum_mode_np), unlike the 7 Å Cα cutoff for proteins.
+- NP OPD uses neighbourhood sizes 5 and 7 only.
+- NP coordinates in the paper were modelled in BIOVIA Materials Studio; at access levels without precomputed data
+  you must build them.
+smoke_test: /opt/mathbac/tools/smoke_test.sh unified_pni_descriptors

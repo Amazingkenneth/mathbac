@@ -1,0 +1,31 @@
+id: cha2022
+title: "Unifying structural descriptors for biological and bioinspired nanoscale complexes"
+paper:
+  citation: "Cha, Turali Emre, Xiao, Kim, Bogdan, VanEpps, Violi & Kotov. Nat. Comput. Sci. 2, 243-252 (2022)"
+  doi: 10.1038/s43588-022-00229-w
+  url: https://www.nature.com/articles/s43588-022-00229-w
+code:
+  capsule: https://doi.org/10.24433/CO.7800040.v1   # Code Ocean capsule 3253425
+  vectorized: https://github.com/jessqma/unified_fast
+  vectorized_commit: 04b567b4ef85dc916209510bd830b1d081e5beb5
+
+brief: brief.md
+contracts: contracts/artifacts.md
+reference_dag: reference_dag.yaml
+gold: cha2022
+
+# What each access level mounts under /materials. Folder names refer to materials/cha2022/<name>.
+access_levels:
+  L1: [paper, si]                          # paper text only
+  L2: [paper, si, code]                    # + released code (capsule / unified_fast), no precomputed data
+  L3: [paper, si, code, precomputed]       # + capsule's processed_data_training, pdb_np, geometry files
+
+checkpoints:
+  C0: {weight: 5,  node: N2}
+  C1: {weight: 10, node: N1}
+  C2: {weight: 10, node: N3}
+  C3: {weight: 20, nodes: [N4a, N4b, N4c]}
+  C4: {weight: 25, nodes: [N6a, N6b]}
+  C5: {weight: 15, node: N7}
+  C6: {weight: 15, node: N8}
+  C7: {weight: 0,  node: N9}   # reported next to the score, not folded in

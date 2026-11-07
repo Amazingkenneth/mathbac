@@ -1,0 +1,16 @@
+# Source: PPI2PNI_Info.xlsx (Jessica Ma) and the released code.
+name: bipspi
+tier: 3
+title: BIPSPI
+installed: false
+purpose: Sequence- and structure-based partner-specific interface prediction (PSSM, conservation, ASA, depth, protrusion,
+  secondary structure, half-sphere exposure...).
+source: https://github.com/rsanchezgarc/BIPSPI
+doi: 10.1093/bioinformatics/bty647
+inputs: Sequence or PDB/PDB id
+outputs: CSV
+pni_translatability: 'No'
+pitfalls:
+- A PPI baseline only.
+preconditions:
+- Not installed in the cha2022 image; listed for later tasks (Kotov-lab data, baselines).

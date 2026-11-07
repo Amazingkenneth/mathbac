@@ -1,0 +1,52 @@
+# Source: PPI2PNI_Info.xlsx (Jessica Ma) and the released code.
+name: dnn_train
+tier: 1
+title: DNN cross-validation (mirrors the released DNN_train.py)
+installed: true
+purpose: The paper's DNN (batch norm, 3 dense layers of 512 with ReLU and dropout 0.5, 2-way softmax) trained with
+  k-fold CV, re-implementing the loop in the released DNN_train.py.
+source: DNN_train.py in the released code
+invoke: python /opt/mathbac/tools/dnn_cv.py --dataset {dataset} --subset {subset} --out-dir ml --folds {folds} --epochs
+  {epochs} {options}
+args:
+  dataset:
+    type: string
+    description: ml/datasets/<subset>.npz
+    input: true
+  subset:
+    type: string
+    description: Subset name, e.g. GE_GT
+  folds:
+    type: integer
+    required: false
+    default: 10
+    description: CV folds
+  epochs:
+    type: integer
+    required: false
+    default: 1000
+    description: 'Max epochs (released code: 1000)'
+  options:
+    type: flags
+    required: false
+    default: ''
+    description: 'Space-separated switches: --scale-per-fold --fix-logits --val-from-train'
+inputs: Feature matrix X and labels y.
+outputs: ml/cv/predictions/dnn_<subset>.npz (fold, y_true, y_score; 1 = contact) and fold models in ml/models/dnn_<subset>/.
+cost: GPU recommended for the full training set (millions of rows).
+resources:
+  cpus: 4
+  gpus: 1
+  mem_gb: 32
+  time_limit_min: 600
+pitfalls:
+- The released DNN_train.py loads the precomputed training arrays at import time, so it cannot be imported as a
+  library; this wrapper re-implements its loop line by line.
+- Released code keeps the epoch with the best accuracy on the test fold itself, which inflates CV scores. Default
+  here matches the paper; --val-from-train is the unbiased alternative. Report which you used.
+- Released code uses SparseCategoricalCrossentropy(from_logits=True) on a softmax output (--fix-logits corrects
+  it).
+- MinMax scaling is fitted on all rows before the split (--scale-per-fold fits on training folds only).
+- In the released arrays label 0 is the contact class. ml/datasets uses 1 = contact.
+- 1000 epochs on millions of rows needs a GPU; use --epochs for a documented short run while debugging.
+smoke_test: /opt/mathbac/tools/smoke_test.sh dnn_train

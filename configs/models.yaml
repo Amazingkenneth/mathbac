@@ -1,0 +1,39 @@
+# Which model each agent role uses. Keys come from the environment (see .env.example),
+# never from this file.
+
+providers:
+  anthropic:
+    type: anthropic
+    api_key_env: ANTHROPIC_API_KEY
+    fallbacks: default        # server-side refusal fallback; set to "none" to turn it off
+  openrouter:
+    type: openai_compat
+    base_url: https://openrouter.ai/api/v1
+    api_key_env: OPENROUTER_API_KEY
+    effort_style: openrouter
+  openai:
+    type: openai_compat
+    base_url: https://api.openai.com/v1
+    api_key_env: OPENAI_API_KEY
+    effort_style: openai
+
+defaults:
+  provider: anthropic
+  model: claude-opus-5-5
+  effort: high
+  max_tokens: 16000
+
+roles:
+  manager: {effort: high}
+  spec_reader: {}
+  env_engineer: {}
+  data_curator: {}
+  descriptor_engineer: {}
+  ml_engineer: {}
+  reporter: {}
+  verifier: {effort: medium}
+  judge: {effort: high}
+
+# Experiment E3 (model mixing): override roles here, for example
+#   descriptor_engineer: {provider: openrouter, model: <openrouter model id>}
+#   ml_engineer: {provider: openai, model: <openai model id>}

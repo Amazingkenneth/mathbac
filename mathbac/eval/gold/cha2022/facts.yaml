@@ -1,0 +1,16 @@
+# Method facts that downstream nodes need. Used for spec retention: when the manager
+# writes a node, how many of the facts that node needs does it pass, and are they correct?
+# `needed_by` names reference-DAG checkpoints whose nodes need the fact.
+
+facts:
+  contact_cutoff_A: {value: 7.0, aliases: [contact_cutoff, contact_distance, interaction_cutoff], needed_by: [C2, C4]}
+  graph_edge_cutoff_A: {value: 7.0, aliases: [edge_cutoff, graph_cutoff, graph_edge_cutoff], needed_by: [C3]}
+  residue_representation: {value: CA, aliases: [residue_atom, representative_atom], needed_by: [C2]}
+  opd_neighbourhood_sizes: {value: [5, 7, 10, 15], aliases: [opd_sizes, opd_neighborhood_sizes, opd_n_list], needed_by: [C3]}
+  gnm_modes_fraction: {value: 0.1, aliases: [gnm_fraction, gnm_mode_fraction], needed_by: [C3]}
+  node_curvature_aggregation: {value: sum, aliases: [curvature_aggregation, node_curvature], needed_by: [C3]}
+  cv_folds: {value: 10, aliases: [folds, n_folds, kfold], needed_by: [C4]}
+  interface_threshold_top_fraction: {value: 0.001, aliases: [top_fraction, interface_top_fraction, threshold], needed_by: [C5, C6]}
+  carbon_atoms_per_node: {value: 13, aliases: [carbon_cg, atoms_per_node_carbon], needed_by: [C6]}
+  zno_atoms_per_node: {value: 2, aliases: [zno_cg, atoms_per_node_zno], needed_by: [C6]}
+  training_set_n_pairs: {value: 464, aliases: [n_pairs, n_training_pairs], needed_by: [C2]}

@@ -1,0 +1,13 @@
+# Source: PPI2PNI_Info.xlsx (Jessica Ma) and the released code.
+name: rosettafold_aa
+tier: 3
+title: RoseTTAFold All-Atom
+installed: false
+purpose: Structure prediction from MSA features, pairwise distances and orientations.
+source: https://github.com/RosettaCommons/RoseTTAFold
+doi: 10.1126/science.abj8754
+inputs: MSA
+outputs: PDB
+pni_translatability: Yes, with limitations
+preconditions:
+- Not installed in the cha2022 image; listed for later tasks (Kotov-lab data, baselines).

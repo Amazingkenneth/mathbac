@@ -1,0 +1,15 @@
+# Source: PPI2PNI_Info.xlsx (Jessica Ma) and the released code.
+name: pinet
+tier: 2
+title: PInet
+installed: false
+purpose: Point-cloud interface prediction from electrostatic charge and hydrophobicity.
+source: https://github.com/FTD007/PInet
+doi: 10.1093/bioinformatics/btab154
+inputs: Descriptor matrix (TXT)
+outputs: PDB
+pni_translatability: Yes, with limitations
+pitfalls:
+- Requires random rotations to sample poses.
+preconditions:
+- Not installed in the cha2022 image; listed for later tasks (Kotov-lab data, baselines).

@@ -1,0 +1,42 @@
+# C6: protein-nanoparticle findings from the paper (Fig. 5, Supplementary Figs. 24-28).
+# kind:
+#   residues:  predicted protein interface (from <case>_interface.json) must include at least `min_hits` of `residues`
+#   n_terminal: most predicted residues sit in the first `fraction` of the chain
+#   ranking:   corona_ranking.csv scores must satisfy each `less_than` pair
+#   review:    no automatic rule; shown to a reviewer (LLM judge or person) with the agent's interface files
+
+pass_count: 5     # of the 6 findings below
+
+findings:
+  - id: cnt_hmpo
+    case_match: ["1cxp"]
+    kind: residues
+    residues: [TYR293, TYR313, ARG294, ARG307]
+    min_hits: 3
+    desc: "CNT-hMPO (1CXP): Tyr293, Tyr313, Arg294, Arg307 among the predicted sites (matches Kagan et al. MD)"
+  - id: gqd_psma
+    case_match: ["5khb"]
+    kind: n_terminal
+    fraction: 0.34
+    min_share: 0.5
+    desc: "Carboxylated GQD binds PSM-α (5KHB) near the N-terminus (rule is provisional; confirm against Fig. 5a)"
+  - id: corona
+    kind: ranking
+    less_than:
+      - [[SWNT, albumin], [SWNT, apolipoprotein]]
+      - [[SWNT, albumin], [SWNT, histidine-rich glycoprotein]]
+      - [[SWNT, albumin], [SWNT, galectin-3-binding protein]]
+    desc: "On SWNTs, albumin ranks below apolipoprotein, HRG and galectin-3BP"
+  - id: spherical_lower
+    kind: ranking
+    lower_np: spherical_C
+    higher_np: SWNT
+    desc: "Spherical carbon NPs score below SWNTs for every corona protein"
+  - id: gqd_iapp
+    case_match: ["2l86"]
+    kind: review
+    desc: "Hydroxylated GQD-hIAPP monomer (2L86) sites match LC-MS/MS (Faridi et al.) and fluorescence quenching (Wang et al.)"
+  - id: zno_bgal
+    case_match: ["zno", "galactosidase"]
+    kind: review
+    desc: "ZnO nanopyramid binds β-galactosidase at the apex and edges of the pyramid"

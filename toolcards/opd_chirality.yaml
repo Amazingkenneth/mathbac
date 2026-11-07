@@ -1,0 +1,26 @@
+# Source: PPI2PNI_Info.xlsx (Jessica Ma) and the released code.
+name: opd_chirality
+tier: 1
+title: Osipov-Pickup-Dunmur chirality index
+installed: true
+purpose: Local OPD chirality index around each residue using its n nearest Cα neighbours (n = 5, 7, 10, 15).
+source: local_OPD.py in the released code
+invoke: python /opt/mathbac/tools/descriptors.py opd --ca {ca} --out {out}
+args:
+  ca:
+    input: true
+    description: data/chains/<pdb>_<chain>.csv (resnum,resname,x,y,z)
+    type: string
+  out:
+    description: Output CSV path in the workspace
+    type: string
+inputs: Cα coordinate CSV.
+outputs: CSV resnum,resname,opd_5,opd_7,opd_10,opd_15.
+cost: Seconds per chain.
+resources:
+  cpus: 1
+  mem_gb: 2
+  time_limit_min: 20
+pitfalls:
+- Values are of order 1e7 (Fig. 1j); scale before training if your model is sensitive to feature scale.
+smoke_test: /opt/mathbac/tools/smoke_test.sh opd_chirality

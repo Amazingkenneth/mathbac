@@ -1,0 +1,39 @@
+# Source: PPI2PNI_Info.xlsx (Jessica Ma) and the released code.
+name: unified_ppi_descriptors
+tier: 1
+title: 'Unified descriptors: released PPI pipeline'
+installed: true
+purpose: Runs the authors' released pipeline (unified_fast PPI_descriptors_cal.py) for one protein complex, producing
+  the residue-pair descriptor matrix.
+source: https://github.com/jessqma/unified_fast (adapted from Code Ocean capsule 3253425)
+doi: 10.1038/s43588-022-00229-w
+invoke: /opt/mathbac/tools/unified_ppi.sh {pdb_id} {chain_a} {chain_b} {out_dir}
+args:
+  pdb_id:
+    description: 4-letter PDB id, lower case
+  chain_a:
+    description: First chain
+  chain_b:
+    description: Second chain
+  out_dir:
+    description: Workspace output folder
+inputs: PDB id (structure fetched from RCSB by the script via PyMOL); precomputed GHECOM files for both chains.
+outputs: Descriptor matrix (.npy) per complex in out_dir; CSV of interacting residues after prediction.
+pni_translatability: 'Yes (PNI variant: unified_pni_descriptors).'
+cost: Minutes per complex; dominated by curvature and MFD on large chains.
+resources:
+  cpus: 2
+  mem_gb: 8
+  time_limit_min: 120
+preconditions:
+- GHECOM output exists for both chains
+- Network access to files.rcsb.org (the script downloads the PDB)
+pitfalls:
+- The script imports a package named descriptor_calc that the repository does not contain; the wrapper maps it to
+  unified_descriptors/.
+- This vectorized version computes OPD only at neighbourhood sizes 5 and 7. The original capsule's training features
+  use 5, 7, 10 and 15.
+- GNM is called with n=10, i.e. the first 10 modes. The paper's Methods say the first tenth of the modes. Record
+  which one you use.
+- It also adds a protrusion index (cx) that the paper does not list.
+smoke_test: /opt/mathbac/tools/smoke_test.sh unified_ppi_descriptors

@@ -1,0 +1,34 @@
+# Default run: reproduce Cha et al. 2022.
+task: tasks/cha2022
+access_level: L3             # L1 paper only | L2 + code | L3 + precomputed data
+plan_mode: reference         # reference (run the reference DAG) | llm (manager plans)
+role_mode: predefined        # predefined | dynamic (manager writes the roles)
+materials_root: materials/cha2022
+toolcards: toolcards
+
+max_parallel: 3              # nodes running at once
+max_attempts: 2              # attempts per node in reference mode
+max_manager_turns: 80
+
+sandbox:
+  kind: docker               # docker | local_unsafe (development only: runs commands on this machine)
+  image: mathbac-cha2022:latest
+  network: bridge            # agents download PDB entries from RCSB; use "none" for offline runs
+  cpus: 8
+  memory: 32g
+
+compute:
+  backend: local             # local | slurm
+  max_workers: 4
+  slurm:
+    apptainer_image: env/mathbac-cha2022.sif
+    partition: null
+    binds: []                # e.g. "/data/cha2022/paper:/materials/paper:ro"
+
+verifier:
+  llm_review: false          # also have a verifier agent review outputs after the contract checks pass
+  max_rejections: 3
+
+# Nodes whose outputs were copied in from a reference run instead of produced by agents.
+# The evaluator marks their checkpoints as assisted.
+injected_nodes: []

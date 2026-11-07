@@ -1,0 +1,17 @@
+# Source: PPI2PNI_Info.xlsx (Jessica Ma) and the released code.
+name: alphafold3
+tier: 3
+title: AlphaFold 3
+installed: false
+purpose: Structure prediction for proteins and complexes from sequence, for Kotov-lab proteins without a PDB entry.
+source: https://github.com/google-deepmind/alphafold3
+doi: 10.1038/s41586-024-07487-w
+inputs: Sequence in JSON
+outputs: PDB
+pni_translatability: Yes, with limitations
+pitfalls:
+- Chirality is an explicit limitation.
+- Requires sequence-based inputs or atomistic data.
+- Model weights need a separate licence request.
+preconditions:
+- Not installed in the cha2022 image; listed for later tasks (Kotov-lab data, baselines).

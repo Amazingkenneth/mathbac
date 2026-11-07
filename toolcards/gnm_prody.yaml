@@ -1,0 +1,37 @@
+# Source: PPI2PNI_Info.xlsx (Jessica Ma) and the released code.
+name: gnm_prody
+tier: 1
+title: Gaussian network model (ProDy)
+installed: true
+purpose: Per-residue square sum of the leading GNM eigenvectors from the Cα Kirchhoff matrix.
+source: ProDy 2.0; GNM.py in the released code
+invoke: python /opt/mathbac/tools/descriptors.py gnm --pdb {pdb} --chain {chain} --out {out} --n-modes {n_modes}
+args:
+  pdb:
+    input: true
+    description: Workspace path to an atomistic PDB file
+    type: string
+  chain:
+    description: Chain identifier
+    type: string
+  out:
+    description: Output CSV path in the workspace
+    type: string
+  n_modes:
+    type: integer
+    required: false
+    default: 10
+    description: 'Number of leading modes (released code: 10)'
+inputs: PDB file.
+outputs: CSV index,gnm (one row per Cα selected by ProDy).
+cost: Seconds per chain.
+resources:
+  cpus: 1
+  mem_gb: 2
+  time_limit_min: 20
+pitfalls:
+- 'Paper: ''first tenth of the modes''. Code: first 10 modes. They differ for any chain longer than 100 residues.'
+- Eigenvectors are rounded to 3 decimals before squaring, as in the released code.
+- ProDy's Cα selection can differ from yours (altlocs, non-standard residues). Align rows by residue number before
+  merging.
+smoke_test: /opt/mathbac/tools/smoke_test.sh gnm_prody

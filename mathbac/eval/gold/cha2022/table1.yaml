@@ -1,0 +1,64 @@
+# Table 1 of Cha et al. 2022: mean ± s.d. over tenfold cross-validation.
+# Rows: model -> subset -> [accuracy, auc, f1] as [mean, sd] pairs.
+# Column order checked against the text (e.g. DNN GT: acc 80.8 ± 1, AUC 87.7 ± 0.7, F1 80.0 ± 1.2).
+
+tolerance: 0.03          # each recomputed mean must be within this of the published mean
+headline: [[dnn, GT], [dnn, GE_GT], [dnn, all], [dnn, CH], [rf, all], [xgb, all]]
+
+table:
+  lr:
+    all:   {accuracy: [0.553, 0.005], auc: [0.565, 0.010], f1: [0.592, 0.007]}
+    CH:    {accuracy: [0.551, 0.009], auc: [0.573, 0.009], f1: [0.553, 0.011]}
+    GE:    {accuracy: [0.553, 0.009], auc: [0.563, 0.011], f1: [0.592, 0.009]}
+    GT:    {accuracy: [0.671, 0.009], auc: [0.730, 0.008], f1: [0.648, 0.009]}
+    GE_GT: {accuracy: [0.551, 0.010], auc: [0.562, 0.013], f1: [0.587, 0.009]}
+    CH_GE: {accuracy: [0.551, 0.010], auc: [0.562, 0.010], f1: [0.589, 0.012]}
+    CH_GT: {accuracy: [0.684, 0.008], auc: [0.743, 0.006], f1: [0.667, 0.009]}
+  gnb:
+    all:   {accuracy: [0.578, 0.010], auc: [0.633, 0.010], f1: [0.668, 0.010]}
+    CH:    {accuracy: [0.537, 0.007], auc: [0.559, 0.008], f1: [0.480, 0.014]}
+    GE:    {accuracy: [0.574, 0.008], auc: [0.628, 0.012], f1: [0.665, 0.007]}
+    GT:    {accuracy: [0.615, 0.010], auc: [0.711, 0.007], f1: [0.670, 0.006]}
+    GE_GT: {accuracy: [0.576, 0.007], auc: [0.630, 0.005], f1: [0.666, 0.007]}
+    CH_GE: {accuracy: [0.575, 0.008], auc: [0.627, 0.010], f1: [0.666, 0.006]}
+    CH_GT: {accuracy: [0.652, 0.009], auc: [0.709, 0.006], f1: [0.668, 0.010]}
+  svm:
+    all:   {accuracy: [0.607, 0.012], auc: [0.656, 0.012], f1: [0.655, 0.010]}
+    CH:    {accuracy: [0.552, 0.008], auc: [0.576, 0.013], f1: [0.523, 0.012]}
+    GE:    {accuracy: [0.606, 0.013], auc: [0.652, 0.015], f1: [0.655, 0.010]}
+    GT:    {accuracy: [0.663, 0.014], auc: [0.719, 0.015], f1: [0.589, 0.016]}
+    GE_GT: {accuracy: [0.606, 0.011], auc: [0.652, 0.009], f1: [0.657, 0.008]}
+    CH_GE: {accuracy: [0.605, 0.012], auc: [0.650, 0.014], f1: [0.656, 0.008]}
+    CH_GT: {accuracy: [0.674, 0.010], auc: [0.741, 0.007], f1: [0.607, 0.012]}
+  rf:
+    all:   {accuracy: [0.822, 0.009], auc: [0.920, 0.006], f1: [0.803, 0.011]}
+    CH:    {accuracy: [0.561, 0.009], auc: [0.583, 0.012], f1: [0.545, 0.011]}
+    GE:    {accuracy: [0.769, 0.010], auc: [0.869, 0.008], f1: [0.737, 0.012]}
+    GT:    {accuracy: [0.804, 0.005], auc: [0.889, 0.004], f1: [0.789, 0.005]}
+    GE_GT: {accuracy: [0.810, 0.008], auc: [0.907, 0.006], f1: [0.789, 0.010]}
+    CH_GE: {accuracy: [0.802, 0.008], auc: [0.899, 0.005], f1: [0.778, 0.010]}
+    CH_GT: {accuracy: [0.812, 0.006], auc: [0.905, 0.004], f1: [0.797, 0.006]}
+  xgb:
+    all:   {accuracy: [0.829, 0.009], auc: [0.913, 0.006], f1: [0.817, 0.010]}
+    CH:    {accuracy: [0.559, 0.010], auc: [0.583, 0.013], f1: [0.542, 0.011]}
+    GE:    {accuracy: [0.780, 0.011], auc: [0.862, 0.007], f1: [0.763, 0.014]}
+    GT:    {accuracy: [0.804, 0.007], auc: [0.879, 0.006], f1: [0.794, 0.007]}
+    GE_GT: {accuracy: [0.815, 0.010], auc: [0.899, 0.006], f1: [0.803, 0.012]}
+    CH_GE: {accuracy: [0.798, 0.010], auc: [0.885, 0.007], f1: [0.784, 0.014]}
+    CH_GT: {accuracy: [0.815, 0.006], auc: [0.895, 0.005], f1: [0.804, 0.006]}
+  dnn:
+    all:   {accuracy: [0.840, 0.007], auc: [0.908, 0.007], f1: [0.830, 0.010]}
+    CH:    {accuracy: [0.574, 0.008], auc: [0.590, 0.011], f1: [0.548, 0.028]}
+    GE:    {accuracy: [0.770, 0.012], auc: [0.838, 0.013], f1: [0.756, 0.012]}
+    GT:    {accuracy: [0.808, 0.010], auc: [0.877, 0.007], f1: [0.800, 0.012]}
+    GE_GT: {accuracy: [0.823, 0.006], auc: [0.891, 0.007], f1: [0.811, 0.008]}
+    CH_GE: {accuracy: [0.791, 0.009], auc: [0.857, 0.008], f1: [0.768, 0.010]}
+    CH_GT: {accuracy: [0.806, 0.005], auc: [0.876, 0.004], f1: [0.794, 0.008]}
+
+# Qualitative findings checked on the recomputed AUCs (DNN unless noted).
+orderings:
+  - {id: gt_gt_ge, desc: "GT alone beats GE alone", left: [dnn, GT], right: [dnn, GE], metric: auc}
+  - {id: ge_gt_ch, desc: "GE alone beats CH alone", left: [dnn, GE], right: [dnn, CH], metric: auc}
+  - {id: tree_vs_linear, desc: "RF, XGB and DNN beat LR, GNB and SVM on all descriptors", strong: [rf, xgb, dnn], weak: [lr, gnb, svm], subset: all, metric: auc}
+  - {id: ch_adds_little_ge, desc: "Adding CH to GE changes AUC by at most 0.03", base: [dnn, GE], plus: [dnn, CH_GE], max_abs_delta: 0.03, metric: auc}
+  - {id: ch_adds_little_gt, desc: "Adding CH to GT changes AUC by at most 0.03", base: [dnn, GT], plus: [dnn, CH_GT], max_abs_delta: 0.03, metric: auc}
