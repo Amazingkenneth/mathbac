@@ -110,6 +110,7 @@ def _write_file(ctx: ToolContext, a: dict) -> tuple[str, bool]:
     path = ctx.resolve(a["path"], write=True)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(a["content"])
+    ctx.sandbox.adopt(path)
     ctx.ledger.record_artifact(ctx.workspace, str(path.relative_to(ctx.workspace.resolve())), ctx.node.id)
     return f"wrote {len(a['content'])} characters to {a['path']}", False
 

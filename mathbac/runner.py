@@ -53,6 +53,7 @@ def run(
     sandbox: Sandbox | None = None,
 ) -> tuple[Path, RunSummary]:
     task = Task.load(REPO_ROOT / run_cfg["task"] if not Path(run_cfg["task"]).is_absolute() else Path(run_cfg["task"]))
+    runs_dir = Path(run_cfg.get("runs_dir") or runs_dir)
     run_dir = Path(runs_dir) / (run_id or new_run_id(run_cfg))
     workspace = run_dir / "workspace"
     workspace.mkdir(parents=True, exist_ok=True)
@@ -71,7 +72,8 @@ def run(
     router = ModelRouter(models_cfg, backends=backends)
     secrets = router.secret_values()
     registry = ToolRegistry.load(REPO_ROOT / run_cfg.get("toolcards", "toolcards"))
-    sb = sandbox or make_sandbox(run_cfg.get("sandbox", {}), workspace, materials)
+    sb = sandbox or make_sandbox(run_cfg.get("sandbox", {}), workspace, materials, protect=[REPO_ROOT])
+    materials = sb.materials  # the sandbox may relocate materials (the user sandbox copies them read-only)
     qcfg = run_cfg.get("compute", {})
     queue = JobQueue(sb, ledger, run_dir / "cache", backend=qcfg.get("backend", "local"),
                      max_workers=int(qcfg.get("max_workers", 4)), slurm=qcfg.get("slurm"))
