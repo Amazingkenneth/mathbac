@@ -222,7 +222,8 @@ def write_stage(jobs):
             gt[c] = f[c]
         # residues the released routines leave undefined (small components, chains < 15 residues for OPD):
         # forward/back fill along the chain, as the released prediction code does (fillna(method='ffill'))
-        ge = ge.fillna(method="ffill").fillna(method="bfill")
+        # OPD is undefined for chains shorter than the neighbourhood size (e.g. 9-residue peptides): set to 0 (achiral)
+        ge = ge.fillna(method="ffill").fillna(method="bfill").fillna(0.0)
         gt = gt.fillna(method="ffill").fillna(method="bfill")
         Path("features/GE").mkdir(parents=True, exist_ok=True)
         Path("features/GT").mkdir(parents=True, exist_ok=True)

@@ -68,7 +68,7 @@ def residue_f1(pdb):
 
 def main():
     T = table1()
-    within = sum(1 for (m, s), v in T.items() if v is not None and all(abs(a - b) <= 0.03 for a, b in zip(v, PAPER[m][s])))
+    within = sum(1 for (m, s), v in T.items() if v is not None for a, b in zip(v, PAPER[m][s]) if abs(a - b) <= 0.03)
     unscaled = {m: {s: scores(Path(f"ml/cv/predictions_scaled/{m}_{s}.npz")) for s in SUBSETS
                     if Path(f"ml/cv/predictions_scaled/{m}_{s}.npz").exists()} for m in ("lr", "gnb", "svm")}
     a = {k: (T[k][1] if T[k] is not None else float("nan")) for k in T}
@@ -85,7 +85,7 @@ def main():
          "the authors' saved models were used only in a separate diagnostic (section 4), never for a reported prediction.", "",
          "## 1. Summary", "",
          f"- **Descriptors reproduce exactly.** With the capsule's GHECOM outputs and CH tables, all 20 reference descriptors on both 1MA9 chains match the authors' own values (Pearson r = 1.000), and 18 of 21 Fig. 2a correlations are reproduced (`features/`).",
-         f"- **Table 1:** {within}/126 cells within ±0.03. Random forest reproduces accuracy and AUC almost exactly on every subset. The DNN is 0.03-0.07 lower on most subsets because it was trained for 100 epochs, not 1000 (CPU only). XGBoost is 0.02-0.04 lower with default hyper-parameters (the paper does not give its settings).",
+         f"- **Table 1:** {within}/126 cells within ±0.03. Logistic regression, naive Bayes, SVM and random forest reproduce Table 1 to the third decimal on almost every cell, F1 included. The DNN is 0.03-0.07 lower on most subsets because it was trained for 100 epochs, not 1000 (CPU only); its CH-only row matches. XGBoost is 0.03-0.05 lower with library defaults (the paper does not give its hyper-parameters).",
          "- **Linear models:** the paper's near-chance LR / GNB / SVM numbers are reproduced only without feature scaling (LR all: 0.553 / 0.565, exactly Table 1). With per-fold MinMax scaling, LR reaches AUC 0.805 on all descriptors, so the paper's large gap between linear and tree models is mostly a scaling artifact.",
          "- **Table 1's F1 is the non-contact class's F1** (sklearn's default positive label in the released arrays). This run's tables use that definition.",
          f"- **Held-out interfaces:** per-residue F1 {held['6wzo'][2]:.2f} / {held['6nqn'][2]:.2f} / {held['1c29'][2]:.2f} for 6WZO / 6NQN / 1C29, below the authors' published predictions (0.53 / 0.40 / 0.37 under the same metric). The authors' own released models applied to their own released test features do not reproduce their Fig. 4 predictions either (section 4).",

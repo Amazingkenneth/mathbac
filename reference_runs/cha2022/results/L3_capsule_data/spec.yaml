@@ -1,0 +1,95 @@
+# Method specification for Cha et al., Nat. Comput. Sci. 2, 243-252 (2022), extracted from the paper,
+# the Supplementary Information (SI) and the released code (unified_fast, adapted from Code Ocean capsule 3253425).
+residue_representation:
+  value: CA
+  source: paper p.243 "Distance matrices of protein complexes"; SI 1.6
+  status: stated
+contact_cutoff_A:
+  value: 7.0
+  source: paper Methods "GT descriptors" and p.245; SI 1.2.1 (justification, Supplementary Table 1)
+  status: stated
+graph_edge_cutoff_A:
+  value: 7.0
+  source: paper Methods "GT descriptors"; code PPI_descriptors_cal.make_graph uses 0 < d <= 7
+  status: stated
+descriptors:
+  value:
+    CH: [molecular weight, Kyte-Doolittle hydrophobicity, "N/C/O/H/S partial-charge sums (PDB2PQR, CHARMM force field)",
+         "N/C/O/H/S atom counts", "residue class flags (positive, negative, polar, amphipathic, hydrophobic) - code only"]
+    GE: [minimum inaccessible radius (GHECOM), accessible shell volume (GHECOM), pocketness (GHECOM),
+         "Osipov-Pickup-Dunmur chirality index over N nearest Cα neighbours, N = 5, 7, 10, 15, residue-mass weighted"]
+    GT: [Gaussian network model square sum, Ollivier-Ricci node curvature, Forman-Ricci node curvature,
+         node-based multifractal dimension]
+  source: paper Fig. 1c,g,k and p.244; SI 2.1-2.3; code feature list in old/PPI_ML_prediction.py
+  status: stated
+opd_neighbourhood_sizes:
+  value: [5, 7, 10, 15]
+  source: SI 2.2.2 ("we tested N = 5, 7, 10, and 15"); code local_OPD.GOS_single n_list
+  status: stated
+gnm_modes_fraction:
+  value: {paper: 0.1, code: "first 10 modes (GNM.gnm_sum_mode(pdb, 10, chain))"}
+  source: paper Methods "GT descriptors" ("first tenth of the modes"); code PPI_descriptors_cal.graph_gnm
+  status: conflict
+node_curvature_aggregation:
+  value: sum of incident edge curvatures
+  source: paper Methods ("node-based scalar Ricci curvature as the sum of all edge curvature values on that node"); code GT_curvature.py
+  status: stated
+mfd_features:
+  value: [fd (node fractal dimension, log-log slope of reachable nodes vs path length), more_fd_1..4 (normalized box growth, radius 5)]
+  source: code MFD.fractal_dimension, MFD.more_box(G, 5); paper describes only the node-based MFD
+  status: code_only
+training_set:
+  value: {n_pairs: 464, n_residue_pairs: 27859297, unique_proteins: 230}
+  source: paper Methods "Training database formation"; SI 1.4.1
+  status: stated
+class_balancing:
+  value: undersampling of non-contact residue pairs to balance the classes (training arrays named binary_under_*)
+  source: code old/PPI_ML_prediction.py and DNN_train.py (processed_data_training/binary_under_all7.npy); not stated in the paper
+  status: code_only
+descriptor_subsets:
+  value: [all, CH, GE, GT, GE+GT, CH+GE, CH+GT]
+  source: paper p.245 "ML algorithms for protein-protein complexes"; Table 1
+  status: stated
+models:
+  value: [logistic regression, Gaussian naive Bayes, SVM, random forest (code - 200 trees, entropy, max depth 50), XGBoost, DNN]
+  source: paper p.245 and Methods; code old/PPI_ML_prediction.py RFC()
+  status: stated
+dnn:
+  value: {layers: 3, units: 512, activation: relu, dropout: 0.5, output: softmax, loss: categorical cross-entropy,
+          code_details: "batch norm first; Adam; batch 128; up to 1000 epochs; best epoch by test-fold accuracy; MinMax scaling on all rows; KFold(shuffle, random_state=0)"}
+  source: paper Methods "ML algorithms"; code DNN_train.DNN_roc_auc_cross_val
+  status: stated
+cv_folds:
+  value: 10
+  source: paper Methods and Table 1 caption
+  status: stated
+metrics:
+  value: [accuracy, ROC-AUC, F1]
+  source: paper Table 1
+  status: stated
+interface_threshold_top_fraction:
+  value: 0.001
+  source: paper Methods ("residue pairs in the top 0.1% by probability as interface residues")
+  status: stated
+heldout_ppi:
+  value: [6WZO, 6NQN, 1C29]
+  source: paper p.245; SI 1.4.1 (no homology to training proteins by BLASTp)
+  status: stated
+np_coarse_graining:
+  value: {carbon_atoms_per_node: 13, zno_atoms_per_node: 2, np_graph_edge_cutoff_A: 7.0}
+  source: paper p.247 "ML predictions for complexes of proteins with NPs" and p.249 (ZnO)
+  status: stated
+np_descriptor_subset:
+  value: GE+GT
+  source: paper p.247 (CH descriptors excluded for NPs)
+  status: stated
+extra:
+  value:
+    contact_labels_code: "distance classes 0: <=7 Å, 1: 7-10, 2: 10-20, 3: 20-50, 4: >50; binarized as class 0 vs rest; class 0 = contact"
+    gnm_kirchhoff_cutoff_A: {protein_calpha: 7.0, nanoparticle_heavy_atoms: 4.0}
+    np_opd_sizes: [5, 7]
+    dataset_curation: "IntAct 'direct interaction' + STRING 'binding' pairs, verified in PDBe-PISA (Ka > 10 1/M), longest-chain PDB per UniProt ID (SI 1.2-1.3)"
+    psm_alpha_structure: {paper_text: 5KHB, source_data: 5I55}
+    rf_params: {n_estimators: 200, criterion: entropy, max_depth: 50}
+  source: code (PPI_ML_prediction.py, GNM.py, local_OPD.py); SI 1.2-1.3; Fig. 5 source data
+  status: code_only
