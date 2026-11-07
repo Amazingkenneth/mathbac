@@ -136,10 +136,11 @@ def write(node: str, ws: Path) -> None:
         for pdb, a, b, split in PAIRS:
             if split != "heldout":
                 continue
-            rows = [[i, j, round(0.9 if i == j else 0.05, 3)] for i in range(1, N_RES + 1) for j in range(1, N_RES + 1)]
+            rows = [[i, j, (0.9 if i == j else 0.05) - 1e-6 * (i * N_RES + j)] for i in range(1, N_RES + 1) for j in range(1, N_RES + 1)]
             wcsv(ws / "predictions" / "ppi" / f"{pdb}_dnn_GE_GT.csv", ["res_a", "res_b", "prob"], rows)
+            top = sorted(rows, key=lambda r: r[2])[-max(int(len(rows) * 0.001), 1):]
             (ws / "predictions" / "ppi" / f"{pdb}_dnn_GE_GT_interface.json").write_text(
-                json.dumps({"chain_a": list(range(1, 9)), "chain_b": list(range(1, 9)), "top_fraction": 0.001}))
+                json.dumps({"chain_a": sorted({r[0] for r in top}), "chain_b": sorted({r[1] for r in top}), "top_fraction": 0.001}))
     elif node == "N8":
         p = ws / "predictions" / "pni"
         p.mkdir(parents=True, exist_ok=True)

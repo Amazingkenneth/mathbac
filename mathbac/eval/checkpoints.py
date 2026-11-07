@@ -339,12 +339,16 @@ def c4_table1(ctx: EvalContext) -> CheckResult:
 
 
 # ---------------------------------------------------------------------------
-def _interface_from_csv(path: Path, top_fraction: float) -> tuple[set[str], set[str]]:
+def _interface_from_csv(path: Path, top_fraction: float) -> tuple[set[str], set[str], int]:
+    """Top-fraction residues from a pair CSV, plus the number of pairs tied at the cut (0 when the cut is clean)."""
     _, rows = read_csv(path)
     probs = np.array([_f(r["prob"]) or 0.0 for r in rows])
     n = max(int(len(rows) * top_fraction), 1)
-    top = np.argsort(probs)[-n:]
-    return {str(rows[i]["res_a"]) for i in top}, {str(rows[i]["res_b"]) for i in top}
+    order = np.argsort(probs, kind="mergesort")
+    top = order[-n:]
+    cut = probs[top[0]]
+    ties = int(np.sum(probs == cut)) if n < len(rows) and probs[order[-n - 1]] == cut else 0
+    return {str(rows[i]["res_a"]) for i in top}, {str(rows[i]["res_b"]) for i in top}, ties
 
 
 def c5_heldout(ctx: EvalContext) -> CheckResult:
@@ -358,8 +362,8 @@ def c5_heldout(ctx: EvalContext) -> CheckResult:
         base = ctx.workspace / "predictions" / "ppi" / f"{cx['pdb'].lower()}_{gold['model']}_{gold['subset']}"
         csv_p, json_p = base.with_suffix(".csv"), Path(str(base) + "_interface.json")
         if csv_p.exists():
-            pa, pb = _interface_from_csv(csv_p, gold["top_fraction"])
-            src = "recomputed from pair probabilities"
+            pa, pb, ties = _interface_from_csv(csv_p, gold["top_fraction"])
+            src = "recomputed from pair probabilities" + (f"; WARNING {ties} pairs tie at the cut, so the set is arbitrary" if ties else "")
         elif json_p.exists():
             j = json.loads(json_p.read_text())
             pa, pb = {str(x) for x in j.get("chain_a", [])}, {str(x) for x in j.get("chain_b", [])}
